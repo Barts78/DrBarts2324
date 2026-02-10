@@ -44,9 +44,9 @@ I am a part time football analyst specialising in the Quarto and R ecosystems.
 
 This is a home for my football visualisation work across **AI UP** and **TMM** pods.
 
-League Cup Games for the **2025 - 2026** Season
+League Cup Games for the **2023 - 2024** Season
 ::::
-## Browse by Match Week / Round
+## Browse by Match Round
 
 
 ```{r}
@@ -57,21 +57,21 @@ League Cup Games for the **2025 - 2026** Season
 base_dir <- "."
 
 md_dirs <- list.dirs(base_dir, recursive = FALSE, full.names = FALSE)
-md_dirs <- md_dirs[grepl("^CLMD\\s+\\d+$", md_dirs)]
-md_dirs <- md_dirs[order(as.numeric(sub("^CLMD\\s+", "", md_dirs)))]
+md_dirs <- md_dirs[grepl("^LCMD\\s+\\d+$", md_dirs)]
+md_dirs <- md_dirs[order(as.numeric(sub("^LCMD\\s+", "", md_dirs)))]
 
-default_thumb <- "Images/champions-league-ball.png"
+default_thumb <- "Images/League_cup_ball.png"
 
 pick_md_thumb <- function(md, base_dir = ".") {
 
   # extract MD number (e.g. "MD 12" -> 12)
-  md_num <- sub("^CLMD\\s+", "", md)
+  md_num <- sub("^LCMD\\s+", "", md)
 
   thumb_path <- file.path(
     base_dir,
     md,
     "docs",
-    paste0("CL-Match-day-", md_num, "-Dashboard_files"),
+    paste0("LC-Match-day-", md_num, "-Dashboard_files"),
     "figure-html",
     "Match Result Probablity Plot-1.png"
   )
@@ -81,7 +81,7 @@ pick_md_thumb <- function(md, base_dir = ".") {
   if (file.exists(thumb_path)) {
     thumb_path
   } else {
-    "Images/champions-league-ball.png"   # fallback
+    "Images/League_cup_ball.png"   # fallback
   }
 }
 
