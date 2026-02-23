@@ -72,7 +72,7 @@ comp_dirs <- sort(comp_dirs)
 # ---- Add external "Players" card (from a different repo) ----
 # This is a named list of extra cards you want alongside local folders.
 extra_cards <- list(
-  "Player Analysis" = "https://barts78.github.io/DrBartsPlayers/Season%202526/"
+  "Player Analysis" = "https://barts78.github.io/DrBartsPlayers/Season%202324/"
 )
 
 # Merge: local comps + extra card label(s)
@@ -87,7 +87,8 @@ thumb_map <- c(
   "CL"         = "Images/UCL.png",
   "League Cup" = "Images/League_cup.png",
   "Specials"   = "Images/Premier-League-ball.png",
-  "Player Analysis"    = "Images/Players.png"
+  "Player Analysis"    = "Images/Players.png",
+  "EL"         = "Images/UEL.png"
 )
 
 default_thumb <- "Images/Premier-League-ball.png"

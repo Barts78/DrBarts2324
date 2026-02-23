@@ -1,0 +1,4 @@
+- source: Match day EL Cup R16L1.qmd
+  quarto-pub:
+    - id: eb61ef53-1da2-4c3a-8a8f-2b0cff3ca27d
+      url: 'https://drbarts.quarto.pub/match-day---el-cup-r16-leg-1'

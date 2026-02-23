@@ -1,5 +1,5 @@
 ---
-btitle: "Match day 12 Viz Pack 2023/24"
+title: "Match day 12 Viz Pack 2023/24"
 author: "Dr Phil Barter"
 format: html
 

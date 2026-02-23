@@ -1,8 +1,7 @@
 ---
-btitle: "Match day 3 Viz Pack 2023/24"
+title: "Match day 3 Viz Pack 2023/24"
 author: "Dr Phil Barter"
 format: html
-
 
 output:
   rmarkdown::html_document:

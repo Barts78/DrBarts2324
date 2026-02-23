@@ -1,0 +1,4 @@
+- source: Match day EL Cup QFL2.qmd
+  quarto-pub:
+    - id: 028d113a-6b74-4ff6-9e0c-063a78daab0b
+      url: 'https://drbarts.quarto.pub/match-day---el-qf-leg-2'

@@ -1,11 +1,8 @@
 ---
-title: "Match day pack"
+title: "Match day 1 Viz Pack 2023/34"
 author: "Dr Phil Barter"
+format: html
 
-header-includes:
-- \usepackage{titling}
-- \pretitle{\begin{center}\LARGE\includegraphics[width=12cm]{"~/Dropbox/AI lfc data/Icons/UP logo.png"}\\[\bigskipamount]}
-- \posttitle{\end{center}}
 output:
   rmarkdown::html_document:
     theme: flatly
@@ -27,7 +24,6 @@ output:
     toc_float: true
     df_print: paged
 font-family: Arial
-
 ---
 
 ```{r setup, include=FALSE}
@@ -35,23 +31,21 @@ knitr::opts_chunk$set(echo = FALSE)
 ```
 
 ```{r, echo=FALSE, fig.height=30, fig.width= 40}
-files <- list.files(path = "~/Dropbox/AI lfc data/UP Pod Prep 2324/Match day 1/viz pack/",
+files <- list.files(path = "~/Users/Barts78/Documents/Dropbox files/AI lfc data/UP Pod Prep 2324/Match day 1/viz pack/",
                     pattern = "*.png",
                     full.names = TRUE) ## A cheeky one-liner
 files <- files[order(file.info(files)$mtime, decreasing = FALSE)]
 #knitr::include_graphics(files)
 ```
 
-
-
 \newpage
 
-# Match Day 1 
+# Match Day 1
 
 ## Line up
 
 ```{r, echo=FALSE, fig.height=30, fig.width= 40, out.height= 50, out.width= 40}
-lineup <- list.files(path = "~/Dropbox/AI lfc data/UP Pod Prep 2324/Match day 1/viz pack/Line up/",
+lineup <- list.files(path = "~/Users/Barts78/Documents/Dropbox files/AI lfc data/UP Pod Prep 2324/Match day 1/viz pack/Line up/",
                     pattern = "*.png",
                     full.names = TRUE) ## A cheeky one-liner
 lineup <- lineup[order(file.info(lineup)$ctime, decreasing = FALSE)]
@@ -77,7 +71,7 @@ for (file in lineup) {
 ## Liverpool
 
 ```{r, echo=FALSE, fig.height=30, fig.width= 40,out.height= 215, out.width= 250,}
-LFCfiles <- list.files(path = "~/Dropbox/AI lfc data/UP Pod Prep 2324/Match day 1/viz pack/LFC",
+LFCfiles <- list.files(path = "~/Users/Barts78/Documents/Dropbox files/AI lfc data/UP Pod Prep 2324/Match day 1/viz pack/LFC",
                     pattern = "*.png",
                     full.names = TRUE) ## A cheeky one-liner
 LFCfiles <- LFCfiles[order(file.info(LFCfiles)$mtime, decreasing = FALSE)]
@@ -103,7 +97,7 @@ for (file in LFCfiles) {
 ## Opposition
 
 ```{r, echo=FALSE, fig.height=30, fig.width= 40}
-Oppofiles <- list.files(path = "~/Dropbox/AI lfc data/UP Pod Prep 2324/Match day 1/viz pack/Oppo/",
+Oppofiles <- list.files(path = "~/Users/Barts78/Documents/Dropbox files/AI lfc data/UP Pod Prep 2324/Match day 1/viz pack/Oppo/",
                     pattern = "*.png",
                     full.names = TRUE) ## A cheeky one-liner
 Oppofiles <- Oppofiles[order(file.info(Oppofiles)$mtime, decreasing = FALSE)]
@@ -129,7 +123,7 @@ for (file in Oppofiles) {
 ## Liverpool Pressing
 
 ```{r, echo=FALSE, fig.height=30, fig.width= 40}
-pressfiles <- list.files(path = "~/Dropbox/AI lfc data/UP Pod Prep 2324/Match day 1/viz pack/Pressing/",
+pressfiles <- list.files(path = "~/Users/Barts78/Documents/Dropbox files/AI lfc data/UP Pod Prep 2324/Match day 1/viz pack/Pressing/",
                     pattern = "*.png",
                     full.names = TRUE) ## A cheeky one-liner
 pressfiles <- pressfiles[order(file.info(pressfiles)$mtime, decreasing = TRUE)]
