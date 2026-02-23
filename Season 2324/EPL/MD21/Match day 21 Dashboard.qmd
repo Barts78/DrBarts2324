@@ -1,0 +1,3655 @@
+---
+title: "Match Day 21 Dashboard"
+author: "Dr Phil Barter"
+format: 
+  dashboard:
+      scrolling: true
+      logo: https://www.dropbox.com/scl/fi/2266chgj5oaes70zou2wv/UP-Logo-small.png?rlkey=9bqiw2rbdfhn9x51mlgsfujpp&dl=0
+      nav-buttons: 
+                  - icon: github
+                    href: https://github.com/Barts78
+                  - icon: linkedin
+                    href: https://www.linkedin.com/in/phil-barter-55500122/
+                  - icon: twitter
+                    href: https://twitter.com/Barts78
+                    
+      theme: 
+       - journal
+       - custom.scss
+
+---
+
+# Line Up
+
+``` {r, echo:FALSE, messages:FALSE, warnings:FALSE}
+#| output: false
+#print('this produces some outout')
+# run_project.R
+library(tidyverse)
+library(shiny)
+library(gifski)
+library(magick)
+library(systemfonts)
+library(sysfonts)
+library(fontawesome)
+library(glue)
+library(worldfootballR)
+library(gganimate)
+library(ggsoccer)
+library(viridis)
+library(paletteer)
+library(RColorBrewer)
+library(ggpointdensity)
+library(ggthemes)
+library(ggtext)
+library(ggiraph)
+library(ggiraphExtra)
+library(ggimage)
+library(gtExtras)
+library(grid)
+library(ggdensity)
+library(treemapify)
+library(magick)
+library(ggpubr)
+library(cowplot)
+library(readxl)
+library(writexl)
+library(gt)
+library(webshot2)
+library(chromote)
+library(ggrepel)
+library(png)
+library(patchwork)
+library(plotly)
+library(reshape)
+library(psych)
+library(ggshakeR)
+library(xtable)
+library(tidyquant)
+library(gfonts)
+library(extrafont)
+library(extrafontdb)
+library(ggnewscale)
+library(stringr)
+library(flextable)
+
+
+
+#set logo
+get_png <- function(filename) {
+  grid::rasterGrob(png::readPNG(filename), interpolate = TRUE)
+}
+
+#load logos
+AI_Logo <- image_read("~/Dropbox/AI lfc data/Icons/UP logo.png")
+logo_AI <- image_read("~/Dropbox/AI lfc data/Icons/UP logo.png")
+Soccerball  <- image_read("~/Dropbox/AI lfc data/Icons/ball1.png")
+Football  <- image_read("~/Dropbox/AI lfc data/Icons/ball2.png")
+
+
+#load fonts
+#set fonts
+font_add_google("Geostar", "Geostar")
+font_add("Awesome", regular = "/Library/Fonts/Font Awesome 6 Brands-Regular-400.otf")
+
+
+# change per game to match kits
+#set Waves titles
+WavesTitle_text <- paste0(
+  'Attacking Waves (', 
+  '<span style="color:green4"> **Touches** </span>',
+  ',',
+  '<span style="color:white"> **Passes** </span>',
+  ',',
+  '<span style="color:green3"> **Shots** </span>',
+  '), ')
+
+OppoWavesTitle_text <- paste0(
+  'Attacking Waves (', 
+  '<span style="color:red3"> **Touches** </span>',
+  ',',
+  '<span style="color:white"> **Passes** </span>',
+  ',',
+  '<span style="color:green3"> **Shots** </span>',
+  '), ')
+
+
+#set xg line titles 
+xGlineTitle_text <- paste0(
+  '(', 
+  '<span style="color:green4"> **Xg** </span>',
+  ',',
+  '<span style="color:green4"> **NPxG Dashed** </span>',
+  ',',
+  '<span style="color:gray"> **xGOT** </span>',
+  '), development')
+
+OppoxGlineTitle_text <- paste0(
+  '(', 
+  '<span style="color:red3"> **Xg** </span>',
+  ',',
+  '<span style="color:red3"> **NPxG Dashed** </span>',
+  ',',
+  '<span style="color:gray"> **xGOT** </span>',
+  '), development')
+
+
+#set dribbles title
+DribblesTitle_text <- paste0(
+  'Dribbles (', 
+  '<span style="color:#BD1100"> **Unsuccessful** </span>',
+  'and',
+  '<span style="color:#4A8C1C"> **Successful** </span>','), ')
+
+#set duels title
+DuelsTitle_text <- paste0(
+  'Duels (', 
+  '<span style="color:#BD1100"> **Unsuccessful** </span>',
+  'and',
+  '<span style="color:#4A8C1C"> **Successful** </span>',
+  '), ')
+
+#social caption with X
+socialx <- paste0('<span style="font-family:\'Geostar\', Arial, sans-serif;color:#151515;font-size:12px;">X</span>',
+                  '<span style="color:#FFF9FB;font-size:12px;">.</span>',
+                  '<span style="font-family:sans-serif;color:#16425B;font-size:12px;">@Barts78</span>',
+                  '<span style="color:#FFF9FB;font-size:12px;">.</span>',
+                  '<span style="font-family:\'Font Awesome 6 Brands\', Arial, sans-serif;color:#104E8B;font-size:12px;">&#xf08c;</span>',
+                  '<span style="color:#FFF9FB;font-size:12px;">.</span>',
+                  '<span style="font-family:sans-serif;color:#16425B;font-size:12px;">phil-barter</span>',
+                  '<span style="color:#FFF9FB;font-size:12px;">.</span>',
+                  '<span style="font-family:\'Font Awesome 6 Brands\', Arial, sans-serif;color:#151515;font-size:12px;">&#xF4F6;</span>',
+                  '<span style="color:#FFF9FB;font-size:12px;">.</span>',
+                  '<span style="font-family:sans-serif;color:#16425B;font-size:12px;">@DrBarts</span>')
+
+##new socials
+social_caption <- function(twitter="@Barts78",
+                           github = "Barts78",
+                           linkedin= "Phil-barter",
+                           mastodon= "@DrBarts",
+                           threads = "Barts78",
+                           data = "OPTA",
+                           icon_color="black",
+                           font_color="#454545",
+                           bg_color="white",
+                           font_family="sans-serif"){
+  
+  icons = list(
+    twitter = "&#xe61a",
+    github = "&#xf09b",
+    linkedin = "&#xf08c",
+    mastodon = "&#xf4f6",
+    threads = "&#xe618",
+    data = "&#xf16b"
+  )   
+  
+  social = list(threads = threads, linkedin = linkedin, twitter = twitter, mastodon = mastodon, github = github, data = data)
+  social = social[!is.na(social)]
+  
+  caption = ""
+  for (name in names(social)) {
+    icon = icons[name]
+    info = social[name]
+    html = glue("<span style='font-family:\"Font Awesome 6 Brands\";color:{icon_color};font-size:12px;'>{icon};</span>
+                <span style='color:{bg_color};font-size:10px;'>.</span>
+                <span style='font-family:{font_family};color:{font_color};font-size:10px;'>{info}</span>
+                <span style='color:{bg_color};font-size:10px;'>.</span>")
+    
+    
+    caption = paste0(caption,html)
+  }
+  
+  caption
+}
+
+#create social caption
+my_socials <- social_caption(twitter = "@Barts78",
+                             github = "Barts78",
+                             linkedin = "Phil-barter",
+                             mastodon = "@DrBarts",
+                             threads = NA,
+                             data = "OPTA",
+                             icon_color = "#454545",
+                             font_color = "#454545",
+                             bg_color = "white",
+                             font_family = "sans-serif")
+
+my_datasource <- paste0('<span style="font-family:\'Font Awesome 6 Free\', Arial, sans-serif;color:#454545;font-size:12px;">&#x1F4BE;</span>',
+                        '<span style="color:#FFF9FB;font-size:10px;">...</span>',
+                        '<span style="font-family:sans-serif;color:#454545;font-size:10px;">OPTA</span>',
+                        '<span style="color:#FFF9FB;font-size:10px;">...</span>')
+
+My_caption <- paste0(my_socials)
+
+#set home
+Match_LFC <- paste("Liverpool")
+
+#set oppo
+Match_Oppo <- paste("Bournemouth")
+
+#set oppo color
+Color_Oppo <- paste("red3")
+
+#set Home color
+Color_LFC <- paste("green4")
+
+#set home color scale
+ColorScale_Home <- paste("ggsci::teal_material")
+
+#set away color scale
+ColorScale_Away <- paste("ggsci::red_material")
+
+#set home color scale con
+ColorScale_HomeC <- paste("ggthemes::Green")
+
+#set away color scale con
+ColorScale_AwayC <- paste("ggthemes::Classic Red")
+
+#set match date
+Game_date <- paste("21-01-24")
+
+#set data type (EPL opta and Understat, CL opta, Fa cup Opta)
+Data_type <- paste("(Opta data)")
+
+#set LFC h/a
+LFCHA <- paste("Away")
+
+#set oppo h/a
+OppoHA <- paste("Home") 
+
+#set fixture
+Match_Fixture <- paste0(Match_LFC, " vs ", Match_Oppo, " (a) ", Game_date)
+
+#set dashboard fixture
+Match_Fixture_Dash <- paste0(Match_LFC, " vs ", Match_Oppo, " (a) ", Game_date)
+
+#set  UnderStat match ID
+MatchIdUS <- 22102 #check
+
+#Set Fotmob Match ID
+MatchIdFotmob <- 4193731 #check
+
+#set Fotmob LFC / home team ID
+LFCIdFotmob <- 8650
+
+#set Fotmob Oppo team ID
+OppoIdFotmob <- 8678
+
+#set fbref match page
+MatchIdFbref <- paste("https://fbref.com/en/matches/9a03e25c/Bournemouth-Liverpool-January-21-2024-Premier-League") #check
+
+#set Game name
+GameName <- paste("BAFC_vs_LFC")
+
+GameWeek <- paste("MD21")
+
+#set Game name PLayers
+GameNamePlayers <- paste("BAFC_vs_LFC_players")
+
+#CHECK
+#set first sub time (min before sub)
+firstSub <- 63
+
+#set second sub time (min before sub)
+secondSub <- 82
+
+#set third sub time (min before sub)
+thirdSub <- 89
+
+#oppo first sub
+firstSubOppo <- 54
+
+#seet pk timte
+PKTime <- 00
+
+#redcard (min before)
+redcard <- 00
+
+#redcard (min before)
+redcard2 <- 00
+
+#load in main data 
+fileName <- paste0("~/Dropbox/AI lfc data/Data Sets/WhoScored/EPL Games/Processed Games/", GameName, ".xlsx")
+plottingData <- read_xlsx(fileName)
+
+#set summary values
+Total_EPV <- sum(plottingData$Cumalative_EPV)
+GameTime <- max(plottingData$expandedMinute)
+OutofPlayTime <- round(sum(plottingData$Out_of_play_time)/60,2)
+InPlayTime <- round(sum(plottingData$In_play_time)/60,2)
+Possession <- round(sum(plottingData$Touches),2)
+HomePossession <- round((((sum(plottingData$Touches == 1 & plottingData$teamId == Match_LFC))/Possession)*100),2)
+OppoPossession <- round((((sum(plottingData$Touches == 1 & plottingData$teamId == Match_Oppo))/Possession)*100),2)
+HomeEPV <- round(sum(plottingData$EPVvalue[plottingData$teamId == Match_LFC & plottingData$`outcomeType/value` == 1]),2)
+OppoEPV <- round(sum(plottingData$EPVvalue[plottingData$teamId == Match_Oppo & plottingData$`outcomeType/value` == 1]),2)
+HomeEPVA <- round(sum(plottingData$TeamEPV[plottingData$teamId == Match_LFC & plottingData$`outcomeType/value` == 1]),2)
+OppoEPVA <- round(sum(plottingData$TeamEPV[plottingData$teamId == Match_Oppo & plottingData$`outcomeType/value` == 1]),2)
+HomexG <- round(sum(plottingData$xG[plottingData$teamId == Match_LFC]),2)
+OppoxG <- round(sum(plottingData$xG[plottingData$teamId == Match_Oppo]),2)
+HomeNPxG <- round(sum(plottingData$NPxG[plottingData$teamId == Match_LFC]),2)
+OppoNPxG <- round(sum(plottingData$NPxG[plottingData$teamId == Match_Oppo]),2)
+HomeBCs <- round(sum(plottingData$BCs[plottingData$teamId == Match_LFC]),0)
+OppoBCs <- round(sum(plottingData$BCs[plottingData$teamId == Match_Oppo]),0)
+
+# setup data frame from main variables above for summary tables
+PossessionTable <- data.frame(
+  teamId = c(Match_LFC, Match_Oppo),
+  Possession = c(HomePossession, OppoPossession)
+)
+
+PossessionTable <- PossessionTable %>%
+  mutate(Possession = round(Possession,2))
+          
+EPVTable <- data.frame(
+  teamId = c(Match_LFC, Match_Oppo),
+  EPV = c(HomeEPV, OppoEPV)
+)
+
+EPVTable <- EPVTable %>%
+  mutate(EPV = round(EPV,2))
+
+#load Fotmob data
+
+MD_logos <- fotmob_get_match_players(MatchIdFotmob)
+MD_logos <- MD_logos %>%
+ unite(Player, first_name, last_name, sep = " ", remove = FALSE, na.rm = TRUE) %>%
+  mutate(Player = str_trim(Player))
+
+
+#load fbref Data
+
+#get data by setting url frm fbref.com
+Liverpool_url <- "https://fbref.com/en/squads/822bd0ba/Liverpool-Stats"
+
+
+#downlaod data & write to excel
+Liverpool_Defensive_logs <- fb_team_match_log_stats(team_urls = Liverpool_url, stat_type = "defense")
+write_xlsx(Liverpool_Defensive_logs, "~/Dropbox/AI lfc data/data sets/fbref/LFC_defence_EPL2324.xlsx")
+
+Liverpool_passing_logs <- fb_team_match_log_stats(team_urls = Liverpool_url, stat_type = "passing")
+write_xlsx(Liverpool_passing_logs, "~/Dropbox/AI lfc data/data sets/fbref/LFC_passing_EPL2324.xlsx")
+
+Liverpool_passing_types_logs <- fb_team_match_log_stats(team_urls = Liverpool_url, stat_type = "passing_types")
+write_xlsx(Liverpool_passing_types_logs, "~/Dropbox/AI lfc data/data sets/fbref/LFC_passing_types_EPL2324.xlsx")
+
+Liverpool_gca_logs <- fb_team_match_log_stats(team_urls = Liverpool_url, stat_type = "gca")
+write_xlsx(Liverpool_gca_logs, "~/Dropbox/AI lfc data/data sets/fbref/LFC_gca_EPL2324.xlsx")
+
+Liverpool_shooting_logs <- fb_team_match_log_stats(team_urls = Liverpool_url, stat_type = "shooting")
+write_xlsx(Liverpool_shooting_logs, "~/Dropbox/AI lfc data/data sets/fbref/LFC_shooting_EPL2324.xlsx")
+
+Liverpool_Misc_logs <- fb_team_match_log_stats(team_urls = Liverpool_url, stat_type = "misc")
+write_xlsx(Liverpool_Misc_logs, "~/Dropbox/AI lfc data/data sets/fbref/LFC_Misc_EPL2324.xlsx")
+
+#Advanced Fbref stats for table
+FbrefMatchUrls2324 <- fb_match_urls(country = "ENG", gender = "M", season_end_year = 2024, tier = "1st")
+LFC_url <- MatchIdFbref #-check
+
+MD_passing <- fb_advanced_match_stats(match_url = LFC_url,stat_type = "passing",team_or_player = "Player")
+
+MD_possession <- fb_advanced_match_stats(match_url = LFC_url,stat_type = "possession",team_or_player = "Player", time_pause = 3)
+
+MD_defense <- fb_advanced_match_stats(match_url = LFC_url,stat_type = "defense", team_or_player = "Player", time_pause = 3)
+
+MD_misc <- fb_advanced_match_stats(match_url = LFC_url,stat_type = "misc", team_or_player = "Player", time_pause = 3)
+
+MD_summary <- fb_advanced_match_stats(match_url = LFC_url,stat_type = "summary", team_or_player = "Player", time_pause = 3) 
+
+MD_shots <- fb_match_shooting(match_url = LFC_url)
+
+MD_lineups <- fb_match_lineups(match_url = LFC_url)
+
+MD_MatchReport <- fb_match_report(match_url = LFC_url, time_pause = 3)
+
+MD_shots <- fb_match_shooting(match_url = LFC_url)
+
+
+```
+
+## Row 1
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r, echo=FALSE}
+files <- list.files(path = "~/Dropbox/AI lfc data/UP Pod Prep 2324/Match day 21/viz pack/",
+                    pattern = "*.png",
+                    full.names = TRUE) ## A cheeky one-liner
+files <- files[order(file.info(files)$mtime, decreasing = FALSE)]
+```
+
+  
+```{r, echo=FALSE, results = "asis"}
+lineup <- list.files(path = "~/Dropbox/AI lfc data/UP Pod Prep 2324/Match day 21/viz pack/Line up/",
+                    pattern = "*.png",
+                    full.names = TRUE) ## A cheeky one-liner
+lineup <- lineup[order(file.info(lineup)$ctime, decreasing = FALSE)]
+
+for (file in lineup) {
+  cat("", "\n")
+  cat("![](",file,")", "\n")
+  cat("\n")
+  caption <- paste0("**Caption:** ", tools::file_path_sans_ext(basename(file)), "\n")
+  cat(caption)
+  cat("", "\n")
+  cat("\n")
+  cat("\n")
+}
+```
+
+# Match Summary
+
+## Row 1 {height = "25%"}
+
+``` {r summary table}
+#|height: 25%
+#posession and goals by team
+MatchSummaryData <- plottingData %>%
+  mutate(Successful_Touch = ifelse(isTouch == "TRUE", 1, 0)) %>%
+  group_by(teamId) %>% 
+  summarise_at(vars(Goals, In_play_time, Touches, PK_Box_Touches, Attacking_Half_Touches, Defensive_Half_Touches, TotalShots, OFShots, OTShots, SixYard_Box_Shots, PK_Box_Shots, Out_Box_Shots, xG, NPxG, xGOT, Attempted_Passes, Successful_Passes, Long_Passes, Successful_Long_Passes, BCs, Corners, Short_Corners), list(sum), na.rm = TRUE) %>%
+  mutate(In_play_time = round((In_play_time/60),1),
+         Pass_Success = round((Successful_Passes/Attempted_Passes)*100,1),
+         Long_Pass_Success = round((Successful_Long_Passes/Long_Passes)*100,1)) %>%
+  na.omit() 
+
+MatchSummaryData <- MatchSummaryData %>%
+  left_join(PossessionTable, by = c("teamId" = "teamId"), copy = TRUE) %>%
+  left_join(EPVTable, by = c("teamId" = "teamId"), copy = TRUE) %>%
+  mutate('EPV % Con.' = round((xG/EPV)*100,1))
+
+MatchSummaryData <- MatchSummaryData %>%
+  select('Team' = teamId, 'Possession %' = Possession, 'On Ball Time' = In_play_time, Touches, 'Total Shots' = TotalShots, 'OFT Shots' = OFShots, 'OT Shots' = OTShots, '6yrd box Shots' = SixYard_Box_Shots, 'PK Box Shots' = PK_Box_Shots, 'Outside Box Shots' = Out_Box_Shots, BCs, Goals, xG, NPxG, xGOT, EPV, 'EPV % Con.', 'Attempted Passes' = Attempted_Passes, 'Successful Passes' = Successful_Passes, 'Pass Success %' = Pass_Success)
+
+MatchSummaryTable <- MatchSummaryData %>%
+  gt(groupname_col = "Team") %>%
+  cols_align(align = "right", columns = everything()) %>%
+  tab_header(
+    title = md("**Match Summary**"),
+    subtitle = paste0(Match_Fixture)) %>%
+  tab_source_note(md(My_caption)) %>%
+  fmt_number(
+    columns = c(3, 13:16),
+    decimals = 2
+  ) %>%
+  fmt_percent(
+    columns = c(2, 17, 20),
+    decimals = 1,
+    scale_values = FALSE
+  ) %>%
+  tab_style(
+    style = cell_fill(color = Color_LFC),
+    locations = cells_row_groups(groups = Match_LFC)) %>%
+  tab_style(
+    style = cell_fill(color = Color_Oppo),
+    locations = cells_row_groups(groups = Match_Oppo)) %>%
+  tab_options(
+    heading.padding = px(1),
+    heading.align = "left",
+    column_labels.background.color = "#E5E5E5",
+    row_group.background.color = "#B22222",
+    stub.background.color = "#E5E5E5",
+    column_labels.border.bottom.color = "black",
+    summary_row.background.color = "#E5E5E5",
+    table.font.size = 14,
+    heading.title.font.size = 16,
+    heading.subtitle.font.size = 14,
+    source_notes.font.size = 8,
+    table.width = "100%") %>%
+  tab_style(locations = cells_title(groups = "title"),style = list(cell_text(weight = "bold", size = 16))) 
+
+MatchSummaryTable
+```
+## Row 2 
+``` {r summary by period}  
+
+#possession and goals by time period
+MatchSummaryPeriodData <- plottingData %>%
+  mutate(Successful_Touch = ifelse(isTouch == "TRUE", 1, 0)) %>%
+  mutate(TeamEPV = ifelse(str_detect(`outcomeType/value`, "1"), paste0(EPVvalue), 0),
+         TeamEPV = as.numeric(TeamEPV)) %>%
+  group_by(Game_Period, teamId) %>% 
+  summarise_at(vars(Goals, In_play_time, Touches, TotalShots, OFShots, OTShots, SixYard_Box_Shots, PK_Box_Shots, Out_Box_Shots, BCs, xG, NPxG, xGOT, Attempted_Passes, Successful_Passes, TeamEPV), list(sum), na.rm = TRUE) %>%
+  mutate(In_play_time = round((In_play_time/60),1),
+         Pass_Success = round((Successful_Passes/Attempted_Passes)*100,1),
+         'EPV % Con.' = round((xG/TeamEPV)*100,1),
+         Possession = round((Touches/(sum(Touches)))*100,1)) %>%
+  na.omit() 
+
+MatchSummaryPeriodData <- MatchSummaryPeriodData %>%
+  select('Time Period' = Game_Period, 'Team' = teamId, 'Possession %' = Possession, 'On Ball Time' = In_play_time, Touches, 'Total Shots' = TotalShots, 'OFT Shots' = OFShots, 'OT Shots' = OTShots, '6yrd box Shots' = SixYard_Box_Shots, 'PK Box Shots' = PK_Box_Shots, 'Outside Box Shots' = Out_Box_Shots, BCs, Goals, xG, NPxG, xGOT, EPV = TeamEPV, 'EPV % Con.', 'Attempted Passes' = Attempted_Passes, 'Successful Passes' = Successful_Passes, 'Pass Success %' = Pass_Success)
+
+MatchSummaryPeriodTable <- MatchSummaryPeriodData %>%
+  gt(rowname_col = "Team", groupname_col = "Time Period") %>%
+  cols_align(align = "right", columns = everything()) %>%
+  tab_header(
+    title = md("Match Details"),
+    subtitle = paste0(Match_Fixture)) %>%
+  tab_source_note(md(My_caption)) %>%
+  fmt_number(
+    columns = c(4, 14:17),
+    decimals = 2
+  ) %>%
+  fmt_percent(
+    columns = c(3, 18, 21),
+    decimals = 1,
+    scale_values = FALSE
+  ) %>%
+  tab_spanner(label = "Possession", columns = c(3:5)) %>%
+  tab_spanner(label = "Shots", columns = c(6:16)) %>%
+  tab_spanner(label = "Passes", columns = c(17:21)) %>%
+  tab_style(
+    locations = cells_column_spanners('Possession'),
+    style = list(cell_text(weight = "bold", size = 16))) %>%
+  tab_style(
+    locations = cells_column_spanners('Shots'),
+    style = list(cell_text(weight = "bold", size = 16))) %>%
+  tab_style(
+    locations = cells_column_spanners('Passes'),
+    style = list(cell_text(weight = "bold", size = 16))) %>%
+  tab_style(
+    locations = cells_row_groups(groups = c("0 - 15", "16 - 30", "31 - 45", "46 - 60", "61 - 75", "76 - 90", "90 +")),
+    style = cell_text(weight = "bold", size = 16, color = "white")) %>%
+  tab_style(
+    locations = cells_stub( rows = c(1, 3, 5, 7, 9, 11, 13)),
+    style = list(cell_fill(color = Color_Oppo),
+                 cell_text(size = 16, color = "white"))) %>%
+  tab_style(
+    locations = cells_stub( rows = c(2, 4, 6, 8, 10, 12, 14)),
+    style = list(cell_fill(color = Color_LFC),
+                cell_text(size = 16, color = "white"))) %>%
+  tab_style(
+    locations = cells_title(groups = "title"),
+    style = list(cell_text(weight = "bold", size = 16))) %>%
+  tab_options(
+    heading.padding = px(1),
+    heading.align = "left",
+    column_labels.background.color = "#E5E5E5",
+    row_group.background.color = "ivory4",
+    stub.background.color = "#E5E5E5",
+    column_labels.border.bottom.color = "black",
+    summary_row.background.color = "#E5E5E5",
+    table.font.size = 14,
+    heading.title.font.size = 16,
+    heading.subtitle.font.size = 14,
+    source_notes.font.size = 8,
+    table.width = "100%")
+
+MatchSummaryPeriodTable
+
+```
+## Row 3 {height = "50%"}
+
+``` {r Match MC}
+#|height: 50%
+#Load data (opta Data)
+dashboard_data <- plottingData
+
+#Dashboard data wrangling all data
+dashboard_data <- dashboard_data %>%
+  filter(teamId == Match_LFC) %>%
+  filter(TotalShots == 1) %>%
+  filter(!situation == "NA") %>%
+  mutate(TotalxG = cumsum(xG)) %>%
+  mutate(TotalNPxG = cumsum(NPxG)) %>%
+  mutate(TotalxGOT = cumsum(xGOT)) %>%
+  mutate(Goal_point_X = ifelse(str_detect(Goals, "1"), paste0(expandedMinute), NA)) %>%
+  mutate(Goal_point_Y = ifelse(str_detect(Goals, "1"), paste0(TotalxG), NA)) %>%
+  mutate(Goal_point_X = as.numeric(Goal_point_X)) %>%
+  mutate(Goal_point_Y = as.numeric(Goal_point_Y)) %>%
+  select(x, y, Goal_point_Y, Goal_point_X, TotalxG, TotalNPxG, TotalxGOT, situation, teamId, TotalShots, xG, NPxG, xGOT, expandedMinute, type)
+
+#Oppo dashboard
+#Load data (Understat Data)
+Oppodashboard_data <- plottingData
+
+Oppodashboard_data <- Oppodashboard_data %>%
+  filter(teamId == Match_Oppo) %>%
+  filter(TotalShots == 1) %>%
+  filter(!situation == "NA") %>%
+  mutate(TotalxG = cumsum(xG)) %>%
+  mutate(TotalNPxG = cumsum(NPxG)) %>%
+  mutate(TotalxGOT = cumsum(xGOT)) %>%
+  mutate(Goal_point_X = ifelse(str_detect(Goals, "1"), paste0(expandedMinute), NA)) %>%
+  mutate(Goal_point_Y = ifelse(str_detect(Goals, "1"), paste0(TotalxG), NA)) %>%
+  mutate(Goal_point_X = as.numeric(Goal_point_X)) %>%
+  mutate(Goal_point_Y = as.numeric(Goal_point_Y)) %>%
+  select(x, y, Goal_point_Y, Goal_point_X, TotalxG, TotalNPxG, TotalxGOT, situation, teamId, TotalShots, xG, NPxG, xGOT, expandedMinute, type)
+
+
+
+#Matchday MC
+HomexGMC <- HomeShots <- dashboard_data %>%
+  select(xG)
+AwayxGMC <- AwayShots <- Oppodashboard_data %>%
+  select(xG)
+
+HomeTotalGoals <- sum(!is.na(ifelse(dashboard_data$type == "Goal", 1, NA)))
+AwayTotalGoals <- sum(!is.na(ifelse(Oppodashboard_data$type == "Goal", 1, NA)))
+
+# Set up for monte carlo --------------------------------------------------
+
+#Goals Against
+set.seed(1111) # if you set the same seed, you will get the same output
+
+runs = 1000; # change based on how many simulation runs you want
+
+AwayxGMC_output <- numeric(runs) # makes a vector to put data in (good practice for when you start building really big simulations)
+
+#Goals for
+set.seed(1111) # if you set the same seed, you will get the same output
+
+runs = 1000; # change based on how many simulation runs you want
+
+HomexGMC_output <- numeric(runs)
+
+
+# monte carlo simulation --------------------------------------------------
+
+#goals Away team
+for (i in 1:runs) {
+  temp_game <- sapply(AwayxGMC$xG, function(x) rbinom(1,1,x)) # apply applies the function to each row, and gives backs the output as a vector
+  AwayxGMC_output[i] <- sum(temp_game)
+}
+
+# proportion of certain goals -------------------------------------------- (overall 17 ga, 28g, home 21g 8 ga, away 7g 9 ga)
+
+goals <- AwayTotalGoals # set number of goals you want proportion for
+
+number_goals <- sum(AwayxGMC_output == goals) # number of times those goals were "scored" out of the number of runs
+
+at_least_goals <- sum(AwayxGMC_output >= goals) # at least that many goals
+
+#table(AwayxGMC_output)
+
+
+# monte carlo simulation --------------------------------------------------
+#Goals Home
+for (i in 1:runs) {
+  temp_game <- sapply(HomexGMC$xG, function(x) rbinom(1,1,x)) # apply applies the function to each row, and gives backs the output as a vector
+  HomexGMC_output[i] <- sum(temp_game)
+}
+
+# proportion of certain goals -------------------------------------------- (use totals for block)
+
+goals <- HomeTotalGoals # set number of goals you want proportion for
+
+number_goals <- sum(HomexGMC_output == goals) # number of times those goals were "scored" out of the number of runs
+
+at_least_goals <- sum(HomexGMC_output >= goals) # at least that many goals
+
+#table(HomexGMC_output)
+
+
+# create data frame from the MC output, so converting vector into data frame
+MC_output <- data.frame(HomexGMC_output, AwayxGMC_output)
+
+MD_MC <- MC_output %>%
+  select(Home = HomexGMC_output, Away = AwayxGMC_output)
+
+
+prob_matrix <- table(MD_MC$Home, MD_MC$Away) / runs
+
+
+# Assuming you have the 'prob_matrix' from the previous example
+
+# Convert probability matrix to long format for ggplot
+long_prob_matrix <- as.data.frame(as.table(prob_matrix))
+colnames(long_prob_matrix) <- c("Home", "Away", "Probability")
+
+long_prob_matrix <- long_prob_matrix %>%
+  mutate(Probability = round(Probability, 2)*100)
+
+# Create a ggplot tiled plot
+MD_MC_Plot <- ggplot(long_prob_matrix, aes(x = Home, y = Away, fill = Probability)) +
+  geom_tile() +
+  geom_text(aes(label = paste(Probability, "%")), size = 4, color = if_else(long_prob_matrix$Probability > 4.5, 'white', 'black'),) +
+  scale_fill_paletteer_c(ColorScale_HomeC) +
+  labs(title = paste("Match Final Score Probablity (1000 sims)"),
+        subtitle = paste(Match_Fixture),
+        x = paste0(Match_LFC, " Goals"), 
+        y = paste0(Match_Oppo, " Goals"),
+        caption = My_caption) +
+  theme(plot.background = element_rect(colour = "black", fill = "snow"),
+        plot.caption = element_markdown(),
+        panel.background = element_blank(),
+        plot.title = element_text(colour = "black", face = "bold", size = 16),
+        plot.title.position = "plot",
+        plot.subtitle = element_text(colour = "black", size = 14),
+        axis.text = element_text(colour = "black", size = 12),
+        axis.title = element_text(colour = "black", size = 12, face = "bold"),
+        legend.position = "none", 
+        legend.direction = "horizontal", 
+        legend.background = element_rect(fill = "#E5E5E5"), 
+        legend.key = element_rect(fill = "#E5E5E5"))
+
+MD_MC_Plot
+```
+
+``` {r Match probablity}
+#|height: 50%
+#result plot
+
+# Calculate probabilities for different outcomes
+Away_wins_prob <- (sum(prob_matrix[upper.tri(prob_matrix)])*100)
+Home_wins_prob <- (sum(prob_matrix[lower.tri(prob_matrix)])*100)
+tie_prob <- (sum(diag(prob_matrix))*100)
+
+# Create a data frame for bar chart
+outcome_prob <- data.frame(Outcome = c(Match_LFC, "Match Drawn", Match_Oppo),
+                           Probability = c(Home_wins_prob, tie_prob, Away_wins_prob))
+
+# Define custom colors
+custom_colors <- c(Match_LFC = Color_LFC, "Match Drawn" = "gray", Match_Oppo = Color_Oppo)
+
+
+# Create a bar chart
+MD_MC_Result_Plot <- ggplot(outcome_prob) +
+  geom_bar(aes(x = Outcome, y = Probability, fill = custom_colors), stat = "identity", colour = "black", width = 1)  +
+  scale_fill_identity(name = "",
+                      breaks = c(Color_LFC,"gray", Color_Oppo),
+                      labels = c(Match_LFC, "Match Drawn", Match_Oppo),
+                      guide = "legend") +
+  geom_text(aes(x = Outcome, y = Probability, label = paste(Probability, " %")), vjust = -0.5,colour = "black") + 
+#  scale_fill_manual(values = custom_colors) +
+  labs(title = "Probabilities of Match Outcome",
+       subtitle = Match_Fixture,
+       x = "", 
+       y = "Probability %",
+       caption = My_caption) +
+  theme(plot.background = element_rect(colour = "black", fill = "snow"),
+        plot.caption = element_markdown(),
+        panel.background = element_blank(),
+        plot.title = element_text(colour = "black", face = "bold", size = 16),
+        plot.title.position = "plot",
+        plot.subtitle = element_text(colour = "black", size = 14),
+        axis.text = element_text(colour = "black", size = 12),
+        axis.title = element_text(colour = "black", size = 12, face = "bold"),
+        legend.position = "none", 
+        legend.direction = "horizontal", 
+        legend.background = element_rect(fill = "#E5E5E5"), 
+        legend.key = element_rect(fill = "#E5E5E5"))
+
+MD_MC_Result_Plot
+```
+
+
+# Liverpool
+
+## Row 1
+
+```{r, echo=FALSE, results = "asis"}
+LFCfiles <- list.files(path = "~/Dropbox/AI lfc data/UP Pod Prep 2324/Match day 21/viz pack/LFC",
+                    pattern = "*.png",
+                    full.names = TRUE) ## A cheeky one-liner
+LFCfiles <- LFCfiles[order(file.info(LFCfiles)$mtime, decreasing = FALSE)]
+
+for (file in LFCfiles) {
+  cat("", "\n")
+  cat("![](",file,")", "\n")
+  cat("\n")
+  caption <- paste0("**Caption:** ", tools::file_path_sans_ext(basename(file)), "\n")
+  cat(caption)
+  cat("", "\n")
+  cat("\n")
+  cat("\n")
+}
+```
+
+# Opposition
+
+### Row 1
+
+```{r, echo=FALSE, results = "asis"}
+LFCfiles <- list.files(path = "~/Dropbox/AI lfc data/UP Pod Prep 2324/Match day 21/viz pack/Oppo",
+                    pattern = "*.png",
+                    full.names = TRUE) ## A cheeky one-liner
+LFCfiles <- LFCfiles[order(file.info(LFCfiles)$mtime, decreasing = FALSE)]
+
+for (file in LFCfiles) {
+  cat("", "\n")
+  cat("![](",file,")", "\n")
+  cat("\n")
+  caption <- paste0("**Caption:** ", tools::file_path_sans_ext(basename(file)), "\n")
+  cat(caption)
+  cat("", "\n")
+  cat("\n")
+  cat("\n")
+}
+```
+
+# Player Analysis
+
+```{r}
+#posession and goals by Player
+MatchSummaryPLayerData <- plottingData %>%
+  mutate(
+    Out_of_play_time = round(Out_of_play_time / 60, 1),
+    EventTime = round(EventTime / 60, 1),
+    TeamEPV = as.numeric(ifelse(str_detect(`outcomeType/value`, "1"), paste0(EPVvalue), 0))) %>%
+  group_by(teamId, playerId, role, player_image_url) %>%
+  summarise_at(vars(Goals, TotalShots, 'OFT Shots' = OFShots, 'OT Shots' = OTShots, Out_Box_Shots, Touches, PK_Box_Touches, Attempted_Passes, Successful_Passes, TeamEPV, Key_Passes, Assists, Hockey_Assists, BCs, xG, xGOT, Aerial_total, Aerial_Won, Aerial_Lost, Ground_Duels_Total, Ground_Duels_Won, Ground_Duels_Lost), list(sum), na.rm = TRUE) %>%
+  ungroup() %>%
+  group_by(teamId) %>%
+  mutate(
+    Team_TotalTouches = sum(Touches),
+    Team_TotalEPV = sum(TeamEPV),
+    Team_TotalxG = sum(xG),
+    Team_TotalPasses = sum(Attempted_Passes),
+    Team_TotalDuels = sum(Ground_Duels_Total),
+    Team_TotalAerials = sum(Aerial_total),
+    Team_TotalShots = sum(TotalShots),
+    Possession = round((Touches / Team_TotalTouches) * 100, 1),
+    Pass_Success = round((Successful_Passes / Attempted_Passes) * 100, 1),
+    Aerial_Success = round((Aerial_Won / Aerial_total) * 100, 1),
+    Duel_Success = round((Ground_Duels_Won / Ground_Duels_Total) * 100, 1),
+    On_Ball_Time = round(InPlayTime * (Possession / 100), 1),
+    Team_EPV_P = round((TeamEPV / Team_TotalEPV) * 100, 1),
+    Team_xG_P = round((xG / Team_TotalxG) * 100, 1),
+    Team_Duels_P = round((Ground_Duels_Total / Team_TotalDuels) * 100, 1),
+    Team_Aerial_P = round((Aerial_total / Team_TotalAerials) * 100, 1),
+    Team_Passes_P = round((Attempted_Passes / Team_TotalPasses) * 100, 1),
+    Team_Shots_P = round((TotalShots / Team_TotalShots) * 100, 1)
+  ) %>%
+  replace_na(list( Aerial_Success = 0)) %>%
+  replace_na(list( Duel_Success = 0)) %>%
+  ungroup()
+
+MatchSummaryPLayerProfileData <- MatchSummaryPLayerData
+
+#need to sort out posessions as adding the image mucks up the calculation, so might need to do left join with image later
+
+MatchSummaryPLayerData <- MatchSummaryPLayerData %>%
+  select(Team = teamId, role, Name = playerId, Player = player_image_url, '% of Team Possession' = Possession, `% of Team On Ball Time` = On_Ball_Time, Touches = Touches, 'Total Shots' = TotalShots, 'Out Box Shots' = Out_Box_Shots, BCs, Goals, xG, xGOT,  'Attempted Passes' = Attempted_Passes, 'Successful Passes' = Successful_Passes, 'Pass Success %' = Pass_Success, Assists, 'Key Passes' = Key_Passes, EPV = TeamEPV, '% of Team EPV' = Team_EPV_P, 'Aerials Total' = Aerial_total, 'Aerials Won' = Aerial_Won, 'Aerial Success %' = Aerial_Success, 'Duels Total' = Ground_Duels_Total, 'Duels Won' = Ground_Duels_Won, 'Duel Success' = Duel_Success)
+
+#player summary tables
+#data load check for data to be converted to number
+MatchdayTableDefensive <- MD_defense
+MatchdayTablePass <- MD_passing
+MatchdayTablePosession <- MD_possession
+MatchdayTableMisc <- MD_misc
+MatchdayTableSummary <- MD_summary
+MatchdayTableShots <- MD_shots
+MatchdayTableLineups <- MD_lineups
+MatchdayTableLogos <- MD_logos
+
+#player URL FOTMob
+MatchdayTableLogos <- MatchdayTableLogos %>%
+  select("Mins" = stats_minutes_played, Player, role,
+         PlayerURL = image_url) %>%
+  mutate(Player = case_when(Player == "Konstantinos Tsimikas" ~ "Kostas Tsimikas",
+                            Player == " Arthur" ~ "Arthur Melo", 
+                            Player == " Fabinho" ~ "Fabinho",
+                            Player == "Alisson Becker" ~ "Alisson",
+                            Player == "Joel Matip" ~ "Joël Matip",
+                            Player == "Joseph Gomez" ~ "Joe Gomez",
+                            Player == "Ilkay Gündogan" ~ "İlkay Gündoğan",
+                            Player == " Rodri" ~ "Rodri",
+                            Player == "Darwin Nunez" ~ "Darwin Núñez",
+                            Player == "Joao Félix" ~ "João Félix",
+                            Player == "Mykhaylo Mudryk" ~ "Mykhailo Mudryk",
+                            Player == "Mateo Kovacic" ~ "Mateo Kovačić",
+                            Player == " Jorginho" ~ "Jorginho",
+                            Player == "Martin Ødegaard" ~ "Martin Ødegaard",
+                            Player == "Thiago Alcántara" ~ "Thiago Alcántara",
+                            Player == " Gabriel" ~ "Gabriel Dos Santos",
+                            Player == "Gabriel Martinelli" ~ "Martinelli",
+                            Player == "Luis Diaz" ~ "Luis Díaz",
+                            Player == " Rodrigo" ~ "Rodrigo",
+                            Player == "Wilfried Gnonto" ~ "Degnand Gnonto",
+                            Player == "Rasmus Kristensen" ~ "Rasmus Nissen",
+                            Player == " Felipe" ~ "Felipe",
+                            Player == " Danilo" ~ "Danilo",
+                            Player == "Moussa Niakhaté" ~ "Moussa Niakhate",
+                            Player == "Lukasz Fabianski" ~ "Łukasz Fabiański",
+                            Player == "Vladimir Coufal" ~ "Vladimír Coufal",
+                            Player == "Said Benrahma" ~ "Saïd Benrahma",
+                            Player == "Tomas Soucek" ~ "Tomáš Souček",
+                            Player == "Naif Aguerd" ~ "Nayef Aguerd",
+                            Player == "Pierre-Emile Højbjerg" ~ "Pierre Højbjerg",
+                            Player == "Ivan Perisic" ~ "Ivan Perišić",
+                            Player == "Pape Sarr" ~ "Pape Matar Sarr",
+                            Player == " Richarlison" ~ "Richarlison",
+                            Player == "Heung-Min Son" ~ "Son Heung-min",
+                            Player == "Sasa Lukic" ~ "Saša Lukić",
+                            Player == "Joao Palhinha" ~ "João Palhinha", 
+                            Player == " Willian" ~ "Willian",
+                            Player == " Vinicius" ~ "Carlos Vinícius",
+                            Player == "Joshua Dasilva" ~ "Josh Dasilva",
+                            Player == "Emiliano Martinez" ~ "Emiliano Martínez",
+                            Player == "Jhon Duran" ~ "Jhon Durán",
+                            Player == "Emiliano Buendia" ~ "Emi Buendía",
+                            Player == " Tete" ~ "Tetê",
+                            Player == "Boubakary Soumaré" ~ "Boubakary Soumaré",
+                            Player == "Romeo Lavia" ~ "Roméo Lavia",
+                            Player == "Alex McCarthy" ~ "Alex McCarthy",
+                            Player == "Caoimhin Kelleher" ~ "Caoimhín Kelleher",
+                            Player == " Neto" ~ "Neto",
+                            Player == "Hamed Traorè" ~ "Hamed Junior Traorè",
+                            Player == " Joelinton" ~ "Joelinton",
+                            Player == "Miguel Almiron" ~ "Miguel Almirón",
+                            Player == "Daniel Burn" ~ "Dan Burn",
+                            Player == "Bruno Guimaraes" ~ "Bruno Guimarães",
+                            Player == "Ezri Konsa" ~ "Ezri Konsa",
+                            Player == "Fabio Silva" ~ "Fábio Silva",
+                            Player == "Hee-Chan Hwang" ~ "Hwang Hee-chan",
+                            Player == "Thomas Doyle" ~ "Tommy Doyle",
+                            Player == "Boubacar Traore" ~ "Boubacar Traoré",
+                            Player == "Joao Gomes" ~ "João Gomes",
+                            Player == "Rayan Ait Nouri" ~ "Rayan Aït Nouri",
+                            Player == "Nicolo Zaniolo" ~ "Nicolò Zaniolo",
+                            Player == "	Emerson" ~ "Emerson Palmieri",
+                            Player == "Mohammed Kudus" ~ "Kudus Mohammed",
+                            Player == "Iyenoma Udogie" ~ "Destiny Udogie",
+                            Player == "Joao Pedro" ~  "João Pedro",
+                            Player == " Igor" ~ "Igor",
+                            Player == "Joel Veltman" ~ "Joël Veltman",
+                            Player == "Pascal Gross" ~ "Pascal Groß",
+                            Player == " Beto" ~ "Beto",
+                            Player == "Vitalii Mykolenko" ~ "Vitaliy Mykolenko",
+                            Player == "Nicolás Dominguez" ~ "Nicolás Domínguez",
+                            Player == " Murillo" ~ "Murillo",
+                            Player == "Alejo Veliz" ~ "Alejo Véliz",
+                            Player == "Ruben Dias" ~ "Rúben Dias",
+                            Player == "Ederson Moraes" ~ "Ederson",
+                            Player == "Jérémy Doku" ~ "Jeremy Doku",
+                            Player == "Yegor Yarmolyuk" ~ "Yehor Yarmoliuk",
+                            Player == "Raul Jiménez" ~ "Raúl Jiménez",
+                            Player == "Bénie Traoré" ~ "Bénie Adama Traore",
+                            Player == "James McAtee" ~ "James Mcatee",
+                            Player == "Vinicius de Souza Costa" ~ "Vinicius Souza",
+                            Player == "Anel Ahmedhodzic" ~ "Anel Ahmedhodžić",
+                            Player == "Wesley Foderingham" ~ "Wes Foderingham",
+                            Player == "Odsonne Edouard" ~ "Odsonne Édouard",
+                            Player == "Marc Guehi" ~ "Marc Guéhi",
+                            Player == " Antony" ~ "Antony",
+                            Player == "Andre Onana" ~ "André Onana",
+                            Player == "Gabriel Martinelli" ~ "Gabriel Martinelli",
+                            Player == "Gabriel" ~ "Gabriel Dos Santos",
+                            Player == "Edward Nketiah" ~ "Eddie Nketiah",
+                            Player == "Mike Tresor" ~ "Mike Trésor",
+                            Player == "Martin Dubravka" ~ "Martin Dúbravka",
+                            Player == "Johann Berg Gudmundsson" ~ "Jóhann Berg Guðmundsson",
+  TRUE ~ as.character(Player))) %>%
+  mutate(Player = case_when(Player == "Martinelli" ~ "Gabriel Martinelli", TRUE ~ as.character(Player))) %>%
+  filter(!Mins == "NA") %>%
+  select("Player", "PlayerURL", "Position" = role)
+
+#MatchdayTableLogos <- Match_players %>%
+#  select("Mins" = minutes_played, "Player" = playerId, role,
+#         PlayerURL = player_image_url) %>%
+#filter(!Mins == "NA") %>%
+#  select("Player", "PlayerURL", "Position" = role)
+
+#if there is an error in the table you can correct it here
+#MatchdayTableLogos <- MatchdayTableLogos %>%
+#mutate(Mins = as.numeric(ifelse(Player == "Yehor Yarmoliuk", 19, as.character(Mins))))
+
+#Player xG PSxG (Fbref)
+MatchdayTableShots <- MatchdayTableShots %>%
+  select(Player, xG, PSxG) %>%
+  mutate(xG = as.numeric(xG)) %>%
+  mutate(PSxG = as.numeric(PSxG)) %>%
+  mutate(PSxG = ifelse(is.na(PSxG), 0, PSxG)) %>%
+  mutate(Player = sub(" \\(pen\\)", "", Player)) %>%
+  group_by(Player) %>%
+  summarize_all(sum, na.rm = TRUE)
+
+
+#player Ariel duel data (FBREF)
+#data wrangling
+MatchdayTableMisc <- MatchdayTableMisc %>%
+  select(Player,
+         "Mins" = "Min",
+         "Aerial Duel %" = 'Won_percent_Aerial_Duels',
+         "Aerial Duel Wins" = 'Won_Aerial_Duels',
+         "Aerial Duel Losses" = Lost_Aerial_Duels,
+         "Shirt" = 'Player_Num') %>%
+  filter(!Mins == "NA") %>%
+  select(Player, `Aerial Duel Wins`, `Aerial Duel %`, `Aerial Duel Losses`)
+
+#player SoT  data (FBREF)
+#data wrangling
+MatchdayTableSummary <- MatchdayTableSummary %>%
+  mutate("Mins" = Min,
+         "SOT" = SoT,
+         "Total S" = Sh,
+         "Shirt" = Player_Num,
+         "Goals" = Gls) %>%
+  filter(!Mins == "NA")
+
+#Player Passing table for KPs and PP stats (FBREF)
+#data wrangling
+MatchdayTablePass <- MatchdayTablePass %>%
+  mutate("Mins" = Min,
+         "Successfull" = Cmp_percent_Total,
+         "KPs" = KP,
+         "PPs" = PrgP,
+         "Position" = Pos,
+         "xT" = xA,
+         "Assists" = Ast,
+         "xA" = xAG,
+         "Final 3rd P" = Final_Third,
+         "Shirt" = Player_Num) %>%
+  filter(!Mins == "NA") %>%
+  mutate('LongP' = Att_Long / Att_Total) %>%
+  replace_na(list( Successfull = 0)) %>%
+  replace_na(list( LongP = 0)) %>%
+  select(Player, Successfull, KPs, PPs, xT, Assists, xA, `Final 3rd P`, LongP)
+  
+
+#Player Possession table for receiving stats (Fbref)
+#data wrangling
+MatchdayTablePosession <- MatchdayTablePosession %>%
+  mutate("Mins" = Min,
+         "Def 3rd Touches" = `Def 3rd_Touches`,
+         "Mid 3rd Touches" = `Mid 3rd_Touches`,
+         "Final 3rd Touches" = `Att 3rd_Touches`,
+         "PK Box Touches" = `Att Pen_Touches`,
+         "Passes Received" = Rec_Receiving,
+         "PP Recieved" = PrgR_Receiving,
+         "Total T" = Touches_Touches,
+         "Shirt" = Player_Num,
+         "Carries" = Carries_Carries,
+         "P Carries" = PrgC_Carries,
+         "F 3rd Carries" = Final_Third_Carries,
+         "Carries Distance" = TotDist_Carries,
+         "P Carrie Distance" = PrgDist_Carries) %>%
+  filter(!Mins == "NA") %>%
+  mutate(Carries = as.numeric(Carries)) %>%
+  mutate(`% F 3rd Carries` = `F 3rd Carries` / Carries) %>%
+  mutate(`% P Carries` = `P Carries` / Carries) %>%
+  mutate(`% Carries D Prog` = `P Carrie Distance` / `Carries Distance`) %>%
+  mutate(`D 3rd Touches / Min` = `Def 3rd Touches` / Mins) %>%
+  mutate(`M 3rd Touches / Min` = `Mid 3rd Touches` / Mins) %>%
+  mutate(`PK Box Touches / Min` = `PK Box Touches` / Mins) %>%
+  mutate(`F 3rd Touches / Min` = `Final 3rd Touches` / Mins) %>%
+  mutate(`% T D 3rd` = `Def 3rd Touches` / `Total T`) %>%
+  mutate(`% T M 3rd` = `Mid 3rd Touches` / `Total T`) %>%
+  mutate(`% T F 3rd` = `Final 3rd Touches` / `Total T`) %>%
+  mutate(`% T PK Box` = `PK Box Touches` / `Total T`) %>%
+  mutate(`T / Min` = `Total T` / Mins) %>%
+  replace_na(list( `% T D 3rd` = 0)) %>%
+  replace_na(list( `% T M 3rd` = 0)) %>%
+  replace_na(list( `% T F 3rd` = 0)) %>%
+  replace_na(list( `% T PK Box` = 0)) %>%
+  replace_na(list( `% Carries D Prog` = 0)) %>%
+  replace_na(list( `% F 3rd Carries` = 0)) %>%
+  replace_na(list( `% P Carries` = 0))
+  
+
+
+#Player Attacking table
+#data wrangling
+MatchdayTableAtt <- MatchdayTableSummary %>%
+  left_join(MatchdayTableLogos, by = c("Player" = "Player"), copy = TRUE) %>%
+  mutate(`Total S` = ifelse(is.na(`Total S`), 0, `Total S`)) %>%
+  left_join(MatchdayTableShots, by = c("Player" = "Player"), copy = TRUE) %>%
+  mutate(PSxG = ifelse(is.na(PSxG), 0, PSxG),
+         xG = ifelse(is.na(xG),0,xG)) %>%
+  left_join(MatchdayTablePass, by = c("Player" = "Player"), copy = TRUE) %>%
+  mutate(`Final 3rd P` = ifelse(is.na(`Final 3rd P`), 0, `Final 3rd P`),
+         xT = ifelse(is.na(xT), 0, xT),
+         xA = ifelse(is.na(xA), 0, xA)) %>%
+  mutate(full_name = Player,
+         Player = PlayerURL)
+
+#remove duplicate row
+MatchdayTableAtt <- MatchdayTableAtt %>%
+  distinct(full_name, .keep_all = TRUE)
+
+MatchdayTableAtt <- MatchdayTableAtt %>%
+  mutate(`P Received` = MatchdayTablePosession$`Passes Received`,
+         `PPs Received` = MatchdayTablePosession$`PP Recieved`,
+         `S / Min` = (`Total S` / Mins),
+         `Final 3rd P / Min` = `Final 3rd P` / Mins) %>%
+  mutate(`Prog Ps` = PPs,
+         `Long P %` = LongP,
+         `Success %` = (Successfull/100))
+
+#Player defensive table (FBREF)
+#data wrangling
+MatchdayTableDef <- MatchdayTablePosession %>%
+  left_join(MatchdayTableLogos, by = c("Player" = "Player"), copy = TRUE) %>%
+  left_join(MatchdayTableMisc, by = c("Player" = "Player"), copy = TRUE) %>%
+  mutate(`Aerial Duel %` = ifelse(is.na(`Aerial Duel %`), 0, `Aerial Duel %`)) %>%
+  mutate(full_name = Player,
+         Player = PlayerURL,
+         Total = `Total T`)
+  
+MatchdayTableDef <- MatchdayTableDef %>%
+  mutate(`Total / Min` = `T / Min`,
+         `Def 3rd` = `Def 3rd Touches`,
+         `Def 3rd / Min` = `D 3rd Touches / Min`,
+         `Def 3rd % TT` = `% T D 3rd`,
+         `Mid 3rd` = `Mid 3rd Touches`,
+         `Mid 3rd / Min` = `M 3rd Touches / Min`,
+         `Mid 3rd % TT` = `% T M 3rd`,
+         `Final 3rd` = `Final 3rd Touches`,
+         `Final 3rd / Min` = `F 3rd Touches / Min`,
+         `Final 3rd % TT` = `% T F 3rd`,
+         `PK Box` = `PK Box Touches`,
+         `PK Box / Min` = `PK Box Touches / Min`,
+         `PK Box % TT` = `% T PK Box`,
+         `Carries Distance (D)` = `Carries Distance`,
+         `% Carries F 3rd` = `% F 3rd Carries`,
+         `% Carries Prog` = `% P Carries`,
+         `% Carries D Prog` = `% Carries D Prog`)
+
+#remove duplicate row
+MatchdayTableDef <- MatchdayTableDef %>%
+  distinct(full_name, .keep_all = TRUE)
+
+
+```
+
+## Row 1 {height = "80%"}
+
+``` {r home PLayer analysis}
+#|height: 80%
+MatchSummaryPlayerTableHome <- MatchSummaryPLayerData %>%
+  filter(Team == Match_LFC) %>%
+  gt(groupname_col = "role", rowname_col = "Name") %>%
+  row_group_order(groups = c("Keeper","Defender","Midfielder", "Attacker")) %>%
+  cols_align(align = "right", columns = everything()) %>%
+  tab_header(
+    title = paste0(Match_LFC, " Player Match Summary"),
+    subtitle = paste0(Match_Fixture)) %>%
+  tab_source_note(md(caption)) %>%
+  cols_hide(Team) %>%
+  gt_img_rows(columns = Player, height = 25) %>%
+#  gt_img_circle(column = 'Player', height = 40, border_color = "black", border_weight = 1.5) %>%
+#  cols_width(Player ~ px(45)) %>% # 110 = 100 (height) + 10 (padding around imgs)
+  summary_rows(columns = c(5:26), fns = list(Average = ~ mean (., na.rm=TRUE)), fmt = list(~fmt_number(., decimals = 1))) %>%
+  summary_rows(columns = c(5:26), fns = list(Total = ~ sum (., na.rm=TRUE)), fmt = list(~fmt_number(., decimals = 0))) %>%
+  fmt_percent(
+    columns = c(4:5, 6, 16, 20, 23, 26),
+    scale_values = FALSE,
+    decimals = 1
+  ) %>%
+  fmt_number(
+    columns = c(19),
+    decimals = 2) %>%
+  tab_spanner(label = "Shots", columns = c(8:13)) %>%
+  tab_spanner(label = "Passes", columns = c(14:20)) %>%
+  tab_spanner(label = "Duels", columns = c(21:26)) %>%
+  tab_style(
+    style = cell_text(color = "#E5E5E5"),
+    locations = cells_column_labels('Player')) %>%
+  tab_style(
+    locations = cells_column_spanners('Shots'),
+    style = list(cell_text(weight = "bold", size = 16))) %>%
+  tab_style(
+    locations = cells_column_spanners('Passes'),
+    style = list(cell_text(weight = "bold", size = 16))) %>%
+  tab_style(
+    locations = cells_column_spanners('Duels'),
+    style = list(cell_text(weight = "bold", size = 16))) %>%
+  tab_style(
+    locations = cells_title(groups = "title"),
+    style = list(cell_text(weight = "bold", size = 16))) %>%
+  tab_options(
+    heading.padding = px(1),
+    heading.align = "left",
+    column_labels.background.color = "#E5E5E5",
+    row_group.background.color = Color_LFC,
+    stub.background.color = "#E5E5E5",
+    column_labels.border.bottom.color = "black",
+    summary_row.background.color = "#E5E5E5",
+    table.font.size = 14,
+    heading.title.font.size = 16,
+    heading.subtitle.font.size = 14,
+    source_notes.font.size = 8,
+    table.width = "100%") %>%
+  gt_color_rows(columns = c(5), palette = ColorScale_Home, domain = c(0,15)) %>%
+  gt_color_rows(columns = c(6, 7, 14, 15, 16, 20, 23, 26), palette = ColorScale_Home, domain = c(0,100)) %>%
+  gt_color_rows(columns = c(8, 21, 25), palette = ColorScale_Home, domain = c(0,10)) %>%
+  gt_color_rows(columns = c(9:11, 17:18), palette = ColorScale_Home, domain = c(0,5)) %>%
+  gt_color_rows(columns = c(22, 24), palette = ColorScale_Home, domain = c(0,20)) %>%
+  gt_color_rows(columns = c(19), palette = ColorScale_Home, domain = c(0,1)) %>%
+  gt_color_rows(columns = c(12:13), palette = ColorScale_Home, domain = c(0,3))
+
+
+MatchSummaryPlayerTableHome
+```
+
+``` {r away player analysis}
+#|height: 80%
+MatchSummaryPlayerTableAway <- MatchSummaryPLayerData %>%
+  filter(Team == Match_Oppo) %>%
+  gt(groupname_col = "role", rowname_col = "Name") %>%
+  row_group_order(groups = c("Keeper","Defender","Midfielder", "Attacker")) %>%
+  cols_align(align = "right", columns = everything()) %>%
+  tab_header(
+    title = paste0(Match_Oppo, " Player Match Summary"),
+    subtitle = paste0(Match_Fixture)) %>%
+  tab_source_note(md(caption)) %>%
+  cols_hide(Team) %>%
+    gt_img_rows(columns = Player, height = 25) %>%
+#  gt_img_circle(column = 'Player', height = 40, border_color = "black", border_weight = 1.5) %>%
+#  cols_width(Player ~ px(45)) %>% # 110 = 100 (height) + 10 (padding around imgs)
+  summary_rows(columns = c(5:26), fns = list(Average = ~ mean (., na.rm=TRUE)), fmt = list(~fmt_number(., decimals = 1))) %>%
+  summary_rows(columns = c(5:26), fns = list(Total = ~ sum (., na.rm=TRUE)), fmt = list(~fmt_number(., decimals = 0))) %>%
+  fmt_percent(
+    columns = c(4:5, 6, 16, 20, 23, 26),
+    scale_values = FALSE,
+    decimals = 1
+  ) %>%
+  fmt_number(
+    columns = c(19),
+    decimals = 2) %>%
+  tab_spanner(label = "Shots", columns = c(8:13)) %>%
+  tab_spanner(label = "Passes", columns = c(14:20)) %>%
+  tab_spanner(label = "Duels", columns = c(21:26)) %>%
+  tab_style(
+    style = cell_text(color = "#E5E5E5"),
+    locations = cells_column_labels('Player')) %>%
+  tab_style(
+    locations = cells_column_spanners('Shots'),
+    style = list(cell_text(weight = "bold", size = 16))) %>%
+  tab_style(
+    locations = cells_column_spanners('Passes'),
+    style = list(cell_text(weight = "bold", size = 16))) %>%
+  tab_style(
+    locations = cells_column_spanners('Duels'),
+    style = list(cell_text(weight = "bold", size = 16))) %>%
+  tab_style(
+    locations = cells_title(groups = "title"),
+    style = list(cell_text(weight = "bold", size = 16))) %>%
+  tab_options(
+    heading.padding = px(1),
+    heading.align = "left",
+    column_labels.background.color = "#E5E5E5",
+    row_group.background.color = Color_Oppo,
+    stub.background.color = "#E5E5E5",
+    column_labels.border.bottom.color = "black",
+    summary_row.background.color = "#E5E5E5",
+    table.font.size = 14,
+    heading.title.font.size = 16,
+    heading.subtitle.font.size = 14,
+    source_notes.font.size = 8,
+    table.width = "100%") %>%
+  gt_color_rows(columns = c(5), palette = ColorScale_Away, domain = c(0,15)) %>%
+  gt_color_rows(columns = c(6, 7, 14, 15, 16, 20, 23, 26), palette = ColorScale_Away, domain = c(0,100)) %>%
+  gt_color_rows(columns = c(8, 21, 25), palette = ColorScale_Away, domain = c(0,10)) %>%
+  gt_color_rows(columns = c(9:11, 17:18), palette = ColorScale_Away, domain = c(0,5)) %>%
+  gt_color_rows(columns = c(22, 24), palette = ColorScale_Away, domain = c(0,20)) %>%
+  gt_color_rows(columns = c(19), palette = ColorScale_Away, domain = c(0,1)) %>%
+  gt_color_rows(columns = c(12:13), palette = ColorScale_Away, domain = c(0,3))
+
+MatchSummaryPlayerTableAway
+```
+
+## Row 2
+
+```{r}
+Player_Summary_plot_data <- MatchSummaryPLayerProfileData %>%
+  select(Team = teamId, Name = playerId, role, '% Team Possession' = Possession, `% Team On Ball Time` = On_Ball_Time, Touches = Touches, 'Total Shots' = TotalShots, 'OFT Shots', 'OT Shots', 'Out Box Shots' = Out_Box_Shots, BCs, Goals, xG, xGOT, '% Team xG' = Team_xG_P, Touches, PK_Box_Touches, 'Attempted Passes' = Attempted_Passes, 'Successful Passes' = Successful_Passes, 'Pass Success %' = Pass_Success, Assists, 'Key Passes' = Key_Passes, EPV = TeamEPV, '% Team EPV' = Team_EPV_P, 'Aerials Total' = Aerial_total, 'Aerials Won' = Aerial_Won, 'Aerial Success %' = Aerial_Success, 'Duels Total' = Ground_Duels_Total, 'Duels Won' = Ground_Duels_Won, 'Duel Success %' = Duel_Success, '% Team Duels' = Team_Duels_P, '% Team Passes' = Team_Passes_P, '% Team Shots' = Team_Shots_P, '% Team Aerials' = Team_Aerial_P)
+
+
+Player_Summary_data <- Player_Summary_plot_data %>%
+  select(Team, Name, role, '% Team Possession', '% Team On Ball Time', '% Team EPV', '% Team Passes', '% Team Shots', '% Team Duels', '% Team Aerials') %>%
+  pivot_longer(cols = c('% Team Possession', '% Team On Ball Time', '% Team EPV','% Team Passes', '% Team Shots', '% Team Duels', '% Team Aerials'), names_to = "Metric", values_to = "Value")
+
+#  select(Team, Name, role, '% of Team Possession', '% of Team On Ball Time', '% Team EPV', '% Team xG', 'Pass Success %', 'Aerial Success %', 'Duel Success %') %>%
+#  pivot_longer(cols = c('% of Team Possession', '% of Team On Ball Time', '% Team EPV', '% Team xG',  'Pass Success %', 'Aerial Success %', 'Duel Success %'), names_to = "Metric", values_to = "Value")
+
+
+
+#select(Team, Name, role, '% of Team Possession', '% of Team On Ball Time', Touches, 'Total Shots', 'Attempted Passes', 'Successful Passes', 'Pass Success %', EPV, 'Aerials Total', 'Aerials Won', 'Aerial Success %', 'Duels Total', 'Duels Won', 'Duel Success') %>%
+#  pivot_longer(cols = c('% of Team Possession', '% of Team On Ball Time', Touches, 'Total Shots', 'Attempted Passes', 'Successful Passes', 'Pass Success %', EPV, 'Aerials Total', 'Aerials Won', 'Aerial Success %', 'Duels Total', 'Duels Won', 'Duel Success'), names_to = "Metric", values_to = "Value")
+
+Player_Goal_data <- Player_Summary_plot_data %>%
+  select(Team, Name, role, 'OFT Shots', 'OT Shots', 'Out Box Shots', BCs, Goals, Assists, 'Key Passes') %>%
+  pivot_longer(cols = c(`OFT Shots`, 'OT Shots', `Out Box Shots`, BCs, Goals, Assists, `Key Passes`), names_to = "Metric", values_to = "Value") 
+
+#filter data by team
+Player_Summary_plot_data_Home <- Player_Summary_data %>%
+  filter(Team == Match_LFC)
+
+Player_Summary_plot_data_Away <- Player_Summary_data %>%
+  filter(Team == Match_Oppo) 
+
+Player_Goal_plot_data_Home <- Player_Goal_data %>%
+  filter(Team == Match_LFC)
+
+Player_Goal_plot_data_Away <- Player_Goal_data %>%
+  filter(Team == Match_Oppo) 
+
+
+#work out team and unit averages
+#general metrics
+Player_Summary_data_Home  <- Player_Summary_plot_data_Home  %>%
+group_by(Metric) %>%
+  mutate(TeamAverage = round(mean(Value, na.rm = TRUE),2)) %>%
+  ungroup()
+
+Player_Summary_data_Home  <- Player_Summary_plot_data_Home  %>%
+  group_by(role, Metric) %>%
+  mutate(UnitAverage = round(mean(Value, na.rm = TRUE),2)) %>%
+  ungroup()
+
+Player_Summary_data_Away  <- Player_Summary_plot_data_Away  %>%
+  group_by(Metric) %>%
+  mutate(TeamAverage = round(mean(Value, na.rm = TRUE),2)) %>%
+  ungroup()
+
+Player_Summary_data_Away  <- Player_Summary_plot_data_Away  %>%
+  group_by(role, Metric) %>%
+  mutate(UnitAverage = round(mean(Value, na.rm = TRUE),2)) %>%
+  ungroup()
+
+#goal metrics
+Player_Goal_data_Home  <- Player_Goal_plot_data_Home  %>%
+  group_by(Metric) %>%
+  mutate(TeamAverage = round(mean(Value, na.rm = TRUE),2)) %>%
+  ungroup()
+
+Player_Goal_data_Home  <- Player_Goal_plot_data_Home  %>%
+  group_by(role, Metric) %>%
+  mutate(UnitAverage = round(mean(Value, na.rm = TRUE),2)) %>%
+  ungroup()
+
+Player_Goal_data_Away  <- Player_Goal_plot_data_Away  %>%
+  group_by(Metric) %>%
+  mutate(TeamAverage = round(mean(Value, na.rm = TRUE),2)) %>%
+  ungroup()
+
+Player_Goal_data_Away  <- Player_Goal_plot_data_Away  %>%
+  group_by(role, Metric) %>%
+  mutate(UnitAverage = round(mean(Value, na.rm = TRUE),2)) %>%
+  ungroup()
+
+
+
+#wrap the tiles for the general plot
+Player_Summary_data_Home$Metric  <- str_wrap(Player_Summary_data_Home$Metric, width = 5)  
+
+Player_Summary_data_Away$Metric  <- str_wrap(Player_Summary_data_Away$Metric, width = 5)  
+
+
+#wrap the tiles for the goal plot
+Player_Goal_data_Home$Metric  <- str_wrap(Player_Goal_data_Home$Metric, width = 5)  
+
+Player_Goal_data_Away$Metric  <- str_wrap(Player_Goal_data_Away$Metric, width = 5)  
+
+
+#reorder data
+facet_order <- c("Keeper", "Defender", "Midfielder", "Attacker")
+
+#general plot
+Player_Summary_data_Home  <- Player_Summary_data_Home  %>%
+arrange(factor(role, levels = facet_order))
+
+Player_Summary_data_Away  <- Player_Summary_data_Away  %>%
+  arrange(factor(role, levels = facet_order))
+
+#goal plot
+Player_Goal_data_Home <- Player_Goal_data_Home %>%
+  arrange(factor(role, levels = facet_order))
+
+Player_Goal_data_Away <- Player_Goal_data_Away %>%
+  arrange(factor(role, levels = facet_order))
+
+
+```
+
+``` {r}
+#| width: 90%
+# this copies the player name columna into a new column and shifts it up one to then be the reciever 
+shift_column <- function(data, columns, new_names = sprintf("%s.Shifted", columns), len = 1L, up = TRUE) {
+  if (length(columns) != length(new_names)) {
+    stop("columns and new_names must be the same length")
+  }
+  
+  # get the rows to keep based on how much to shift it by and weather to shift up or down
+  rowsToKeep <- seq(from = 1 + len * up, length.out = NROW(data) - len)
+  
+  # for the original data -- it needs to be shifted the other way
+  dataRowsToKeep <- seq(from = 1 + len * !up, length.out = NROW(data) - len)
+  
+  #create a df of the shifted rows
+  shiftedDF <- data[rowsToKeep, columns]
+  
+  # give the right names to these new columns
+  names(shiftedDF) <- new_names
+  
+  # data names
+  dataNames <- names(data)
+  
+  # get rid of excess rows in data
+  data <- data[dataRowsToKeep, ]
+  
+  # tack shifted data onto the end of the original (and cutoff) data
+  data <- cbind(data, shiftedDF)
+  names(data) <- c(dataNames, new_names)
+  
+  return(data)
+  } 
+
+PassConnections <- plottingData 
+PassConnections <- PassConnections[complete.cases(PassConnections[, "playerId"]), ]
+PassConnections <- PassConnections[complete.cases(PassConnections[, "teamId"]), ]
+PassConnections <- shift_column(data = PassConnections, columns = "playerId", new_names = "receiver", len = 1, up = TRUE)
+PassConnections <- shift_column(data = PassConnections, columns = "teamId", new_names = "receiver_team", len = 1, up = TRUE)
+PassConnections <- shift_column(data = PassConnections, columns = "player_image_url", new_names = "receiver_URL", len = 1, up = TRUE)
+
+
+# number of passess between players - add in bc and kps
+PassConnections <- PassConnections %>%
+  filter(type == "Pass") %>% 
+  select(Passer = playerId, Receiver = receiver, Passer_Team = teamId, Passer_URL = player_image_url, Receiver_Team = receiver_team, Receiver_URL = receiver_URL, Successful_Passes, BCs, Key_Passes) 
+
+#calculate pass success
+PassConnections <- PassConnections %>%
+  group_by(Passer, Receiver, Passer_Team, Receiver_Team, Passer_URL, Receiver_URL) %>% 
+  summarise(Passes = n(), Successful_Passes = sum(Successful_Passes), Key_Passes = sum(Key_Passes), BCs = sum(BCs)) %>% 
+  na.omit() %>%
+  mutate(Pass_Suc = (round(Successful_Passes / Passes,2)*100)) %>%
+  replace_na(list(Pass_Suc = 0))
+
+#filter by over 5 connections
+PassConnections <- PassConnections %>%
+  group_by(Passer = pmin(Passer, Passer), Receiver = pmax(Receiver, Receiver), Passer_Team, Receiver_Team, Passer_URL, Receiver_URL) %>%
+  filter(Passes >= 5) %>%
+  summarise(Passes = sum(Passes), Successful_Passes = sum(Successful_Passes), Pass_Success = mean(Pass_Suc), Key_Passes = sum(Key_Passes), BCs = sum(BCs))
+
+#prep for main tables
+PassConnectiondata <- PassConnections %>%
+  select(Passer_Team, Passer, Passer_URL, Receiver, Receiver_Team, Receiver_URL, 'Attempted Passes' = Passes, 'Successful Passes' = Successful_Passes, 'Pass Success %' = Pass_Success, 'Key Passes' = Key_Passes)
+
+#Home pass connextions tables
+PassConnectionTableHome <- PassConnectiondata %>%
+  filter(Receiver_Team == Match_LFC, 
+         Passer_Team == Match_LFC) %>%
+  gt(rowname_col = "Receiver", groupname_col = "Passer") %>%
+  cols_align(align = "right", columns = everything()) %>%
+  gt_img_rows(columns = Passer_URL, height = 25) %>%
+  gt_img_rows(columns = Receiver_URL, height = 25) %>%
+#  gt_img_circle(column = 'Passer_URL', height = 40, border_color = "black", border_weight = 1.5) %>%
+#  cols_width(Passer_URL ~ px(30)) %>% # 110 = 100 (height) + 10 (padding around imgs)
+#  gt_img_circle(column = 'Receiver_URL', height = 40, border_color = "black", border_weight = 1.5) %>%
+#  cols_width(Receiver_URL ~ px(30)) %>% # 110 = 100 (height) + 10 (padding around imgs)
+  fmt_percent(
+    columns = c(5),
+    scale_values = FALSE,
+    decimals = 1
+   ) %>%
+  cols_hide(columns = c(Passer_Team, Receiver_Team)) %>%
+  tab_header(
+    title = md(paste0(Match_LFC, " Open Play Passing connections")),
+    subtitle = paste0(Match_Fixture, " Min 5 passes")) %>%
+  tab_source_note(md(caption)) %>%
+  tab_options(
+    heading.padding = px(1),
+    heading.align = "left",
+    column_labels.background.color = "#E5E5E5",
+    row_group.background.color = Color_LFC,
+    stub.background.color = "#E5E5E5",
+    column_labels.border.bottom.color = "black",
+    summary_row.background.color = "#E5E5E5",
+    table.font.size = 14,
+    heading.title.font.size = 16,
+    heading.subtitle.font.size = 14,
+    source_notes.font.size = 8,
+    table.width = "100%") %>%
+  tab_style(
+    style = cell_text(color = "#E5E5E5"),
+    locations = cells_column_labels('Receiver_URL')) %>%
+  tab_style(
+    style = cell_text(color = "#E5E5E5"),
+    locations = cells_column_labels('Passer_URL')) %>%
+  tab_style(locations = cells_title(groups = "title"),style = list(cell_text(weight = "bold", size = 16))) 
+
+PassConnectionTableHome
+```
+
+```{r}
+#| width: 90%
+#away Pass connections table
+PassConnectionTableAway <- PassConnectiondata %>%
+  filter(Receiver_Team == Match_Oppo,
+         Passer_Team == Match_Oppo) %>%
+  gt(rowname_col = "Receiver", groupname_col = "Passer") %>%
+  cols_align(align = "right", columns = everything()) %>%
+  gt_img_rows(columns = Passer_URL, height = 25) %>%
+  gt_img_rows(columns = Receiver_URL, height = 25) %>%
+#  gt_img_circle(column = 'Passer_URL', height = 40, border_color = "black", border_weight = 1.5) %>%
+#  cols_width(Passer_URL ~ px(30)) %>% # 110 = 100 (height) + 10 (padding around imgs)
+#  gt_img_circle(column = 'Receiver_URL', height = 40, border_color = "black", border_weight = 1.5) %>%
+#  cols_width(Receiver_URL ~ px(30)) %>% # 110 = 100 (height) + 10 (padding around imgs)
+  fmt_percent(
+    columns = c(5),
+    scale_values = FALSE,
+    decimals = 1
+  ) %>%
+  cols_hide(columns = c(Passer_Team, Receiver_Team)) %>%
+  tab_header(
+    title = md(paste0(Match_Oppo, " Open Play Passing connections")),
+    subtitle = paste0(Match_Fixture, " Min 5 passes")) %>%
+  tab_source_note(md(caption)) %>%
+  tab_options(
+    heading.padding = px(1),
+    heading.align = "left",
+    column_labels.background.color = "#E5E5E5",
+    row_group.background.color = Color_Oppo,
+    stub.background.color = "#E5E5E5",
+    column_labels.border.bottom.color = "black",
+    summary_row.background.color = "#E5E5E5",
+    table.font.size = 14,
+    heading.title.font.size = 16,
+    heading.subtitle.font.size = 14,
+    source_notes.font.size = 8,
+    table.width = "100%") %>%
+  tab_style(
+    style = cell_text(color = "#E5E5E5"),
+    locations = cells_column_labels('Receiver_URL')) %>%
+  tab_style(
+    style = cell_text(color = "#E5E5E5"),
+    locations = cells_column_labels('Passer_URL')) %>%
+  tab_style(locations = cells_title(groups = "title"),style = list(cell_text(weight = "bold", size = 16)))
+
+PassConnectionTableAway
+```
+
+# EPV Analysis
+
+## Row 1
+
+``` {r}  
+
+EPVHeatMapData <- plottingData %>%
+  filter(teamId == Match_LFC) %>%
+  filter(!`qualifiers/0/type/value` == 2, 
+         !`qualifiers/0/type/value` == 6, #corner
+         !`qualifiers/0/type/value` == 5, #free kick
+         !`qualifiers/0/type/value` == 107, #throw in
+         !`qualifiers/1/type/value` == 2, 
+         !`qualifiers/1/type/value` == 6,
+         !`qualifiers/1/type/value` == 5,
+         !`qualifiers/1/type/value` == 107,
+         !`qualifiers/2/type/value` == 2, 
+         !`qualifiers/2/type/value` == 6,
+         !`qualifiers/2/type/value` == 5,
+         !`qualifiers/2/type/value` == 107,
+         !`qualifiers/3/type/value` == 2, 
+         !`qualifiers/3/type/value` == 6,
+         !`qualifiers/3/type/value` == 5,
+         !`qualifiers/3/type/value` == 107,
+         `type/value` == 1 & `outcomeType/value` == 1 |
+           `type/value` == 2 & `outcomeType/value` == 1 | 
+           `type/value` == 3 & `outcomeType/value` == 1 |
+           `type/value` == 4 & `outcomeType/value` == 1 |
+           `type/value` == 9 |
+           `type/value` == 7 |
+           `type/value` == 8 |
+           `type/value` == 10 |
+           `type/value` == 11 |
+           `type/value` == 12 |
+           `type/value` == 13 |
+           `type/value` == 14 |
+           `type/value` == 15 |
+           `type/value` == 16 |
+           `type/value` == 41 |
+           `type/value` == 44 |
+           `type/value` == 42 |
+           `type/value` == 45 |
+           `type/value` == 50 |
+           `type/value` == 52 |
+           `type/value` == 54 |
+           `type/value` == 61 |
+           `type/value` == 73 |
+           `type/value` == 74)
+
+#set time period
+EPVHeatMapDataFT <- EPVHeatMapData
+
+#set EPV total for time period
+HomeEPVFT <- sum(EPVHeatMapDataFT$EPVvalue)
+
+# Create a new variable to represent the zone for each observation
+EPVHeatMapDataFT$zone_x <- cut(EPVHeatMapDataFT$x, breaks = c(0, 17, 33.2, 50, 66.4, 83, 100), include.lowest = TRUE)
+EPVHeatMapDataFT$zone_y <- cut(EPVHeatMapDataFT$y, breaks = c(0, 21.1, 36.8, 63.2, 78.9, 100), include.lowest = TRUE)
+
+# Calculate average EPV for each zone
+average_epvFT <- EPVHeatMapDataFT %>%
+  group_by(zone_x, zone_y) %>%
+  summarize(avg_epv = sum(EPVvalue, na.rm = TRUE)) %>%
+  mutate(avg_epv = round(ifelse(avg_epv < 0, abs(avg_epv), avg_epv), 3),
+         PEPV = round(avg_epv/HomeEPVFT,3)) 
+
+# Plot the tile plot
+EPVMapplotFT <- ggplot(average_epvFT, aes(x = zone_x, y = zone_y, fill = avg_epv)) +
+  theme_pitch() +
+  
+  #geometrics
+  geom_tile() +
+  geom_text(aes(label = PEPV, size = 3)) +
+  scale_fill_paletteer_c(ColorScale_HomeC) +
+
+  #formatting
+  labs(title = "LFC Open Play EPV Heat Map - Full Game", 
+       subtitle = paste0(Match_Fixture,"  \nDirection of play Left to Right, Increased Colour = Higher EPV, \nBox figures = % of Total EPV"),
+       caption =  caption) +
+  theme(plot.background = element_rect(colour = "snow", fill = "snow"),
+        plot.caption = element_markdown(),
+        panel.background = element_blank(),
+        plot.title = element_text(colour = "black", face = "bold", size = 14),
+        plot.title.position = "plot",
+        plot.subtitle = element_text(colour = "black", size = 12),
+        legend.position = "none", 
+        legend.direction = "horizontal", 
+        legend.background = element_rect(fill = "#E5E5E5"), 
+        legend.key = element_rect(fill = "#E5E5E5"))
+
+#calculate for combined tile and heat map
+average_epvNZFT <- average_epvFT %>%
+  mutate(x = ifelse(zone_x == "[0,17]", 8.5,
+                    ifelse(zone_x == "(17,33.2]", 25.1,
+                           ifelse(zone_x == "(33.2,50]", 41.6,
+                                  ifelse(zone_x == "(50,66.4]", 58.2,
+                                         ifelse(zone_x == "(66.4,83]", 74.7,
+                                                ifelse(zone_x == "(83,100]", 91.5, NA))))))) %>%
+  mutate(y = ifelse(zone_y == "[0,21.1]", 10,
+                    ifelse(zone_y == "(21.1,36.8]", 30,
+                           ifelse(zone_y == "(36.8,63.2]", 50,
+                                  ifelse(zone_y == "(63.2,78.9]", 70,
+                                         ifelse(zone_y == "(78.9,100]", 90, NA))))))
+
+average_epvNZFT <- average_epvNZFT %>%
+  group_by(x, y) %>%
+  summarise(avg_epv = sum(avg_epv, na.rm = TRUE)) %>%
+  mutate(PEPV = 100*(round(avg_epv/HomeEPVFT,2)))  
+
+
+EPVHeatMapplotFT <- EPVHeatMapDataFT %>%
+  ggplot(aes(x = x, y = y)) +
+  annotate_pitch(dimensions = pitch_opta, fill = "#E5E5E5", colour = "#454545") +
+  theme_pitch() +
+  geom_tile() +
+  geom_segment(aes(y = 21.1, yend = 21.1, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 36.8, yend = 36.8, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 63.2, yend = 63.2, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 78.9, yend = 78.9, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 17, xend = 17), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 33.2, xend = 33.2), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 50, xend = 50), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 66.4, xend = 66.4), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 83, xend = 83), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  
+  # add zone percentage numbers
+  geom_text(data = average_epvNZFT, aes(x = x, y = y, label = paste(PEPV, "%")), size = 4) +
+  
+  #geometrics
+  stat_density_2d_filled(aes(level = EPV, fill = after_stat(level)), alpha = 0.8, adjust = 0.1, linewidth = 2) +
+  scale_fill_paletteer_d(ColorScale_Home) +
+  
+  #formatting
+  labs(title = "LFC Open Play EPV Heat Map - Full Game", 
+       subtitle = paste0(Match_Fixture,"  \nDirection of play Left to Right, Increased Colour = Higher \nEPV, Box figures = % of Total EPV"),
+       caption =  My_caption) +
+  theme(plot.background = element_rect(colour = "snow", fill = "snow"),
+        plot.caption = element_markdown(),
+        panel.background = element_blank(),
+        plot.title = element_text(colour = "black", face = "bold", size = 14),
+        plot.title.position = "plot",
+        plot.subtitle = element_text(colour = "black", size = 12),
+        legend.position = "none", 
+        legend.direction = "horizontal", 
+        legend.background = element_rect(fill = "#E5E5E5"), 
+        legend.key = element_rect(fill = "#E5E5E5"))
+
+EPVHeatMapplotFT
+
+#EPVHeatMapplotFT_I <- ggplotly(EPVHeatMapplotFT)
+#EPVHeatMapplotFT_I
+################################################################
+```
+
+``` {r}
+#Oppo EPV heat plots
+
+OppoEPVHeatMapData <- plottingData %>%
+  filter(teamId == Match_Oppo) %>%
+  filter(!`qualifiers/0/type/value` == 2, 
+         !`qualifiers/0/type/value` == 6, #corner
+         !`qualifiers/0/type/value` == 5, #free kick
+         !`qualifiers/0/type/value` == 107, #throw in
+         !`qualifiers/1/type/value` == 2, 
+         !`qualifiers/1/type/value` == 6,
+         !`qualifiers/1/type/value` == 5,
+         !`qualifiers/1/type/value` == 107,
+         !`qualifiers/2/type/value` == 2, 
+         !`qualifiers/2/type/value` == 6,
+         !`qualifiers/2/type/value` == 5,
+         !`qualifiers/2/type/value` == 107,
+         !`qualifiers/3/type/value` == 2, 
+         !`qualifiers/3/type/value` == 6,
+         !`qualifiers/3/type/value` == 5,
+         !`qualifiers/3/type/value` == 107,
+         `type/value` == 1 & `outcomeType/value` == 1 |
+           `type/value` == 2 & `outcomeType/value` == 1 | 
+           `type/value` == 3 & `outcomeType/value` == 1 |
+           `type/value` == 4 & `outcomeType/value` == 1 |
+           `type/value` == 9 |
+           `type/value` == 7 |
+           `type/value` == 8 |
+           `type/value` == 10 |
+           `type/value` == 11 |
+           `type/value` == 12 |
+           `type/value` == 13 |
+           `type/value` == 14 |
+           `type/value` == 15 |
+           `type/value` == 16 |
+           `type/value` == 41 |
+           `type/value` == 44 |
+           `type/value` == 42 |
+           `type/value` == 45 |
+           `type/value` == 50 |
+           `type/value` == 52 |
+           `type/value` == 54 |
+           `type/value` == 61 |
+           `type/value` == 73 |
+           `type/value` == 74)
+
+#set for time period
+OppoEPVHeatMapDataFT <- OppoEPVHeatMapData
+
+#set EPV total for time period
+OppoEPVFT <- sum(OppoEPVHeatMapDataFT$EPVvalue)
+
+
+# Create a new variable to represent the zone for each observation
+OppoEPVHeatMapDataFT$zone_x <- cut(OppoEPVHeatMapDataFT$x, breaks = c(0, 17, 33.2, 50, 66.4, 83, 100), include.lowest = TRUE)
+OppoEPVHeatMapDataFT$zone_y <- cut(OppoEPVHeatMapDataFT$y, breaks = c(0, 21.1, 36.8, 63.2, 78.9, 100), include.lowest = TRUE)
+
+# Calculate average EPV for each zone
+Oppoaverage_epvFT <- OppoEPVHeatMapDataFT %>%
+  group_by(zone_x, zone_y) %>%
+  summarize(avg_epv = sum(EPVvalue, na.rm = TRUE)) %>%
+  mutate(avg_epv = round(ifelse(avg_epv < 0, abs(avg_epv), avg_epv), 3),
+         PEPV = round(avg_epv/OppoEPVFT,3)) 
+
+# Plot the tile plot
+OppoEPVMapplotFT <- ggplot(Oppoaverage_epvFT, aes(x = zone_x, y = zone_y, fill = avg_epv)) +
+  theme_pitch() +
+  
+  #geometrics
+  geom_tile() +
+  geom_text(aes(label = PEPV, size = 3)) +
+  scale_fill_paletteer_c(ColorScale_AwayC) +
+  
+  #formatting
+  labs(title = paste(Match_Oppo," Open Play EPV Heat Map - Full Game"), 
+       subtitle = paste0(Match_Fixture,"  \nDirection of play Left to Right, Increased Colour = Higher EPV, \nBox figures = % of Total EPV"),
+       caption =  caption) +
+  theme(plot.background = element_rect(colour = "black", fill = "snow"),
+        plot.caption = element_markdown(),
+        panel.background = element_blank(),
+        plot.title = element_text(colour = "black", face = "bold", size = 14),
+        plot.title.position = "plot",
+        plot.subtitle = element_text(colour = "black", size = 12),
+        legend.position = "none", 
+        legend.direction = "horizontal", 
+        legend.background = element_rect(fill = "#E5E5E5"), 
+        legend.key = element_rect(fill = "#E5E5E5"))
+
+#OppoEPVMapplotFT
+
+#save tile Map plot
+#ggsave("Oppo Open Play EPV Tile Map FT.png", width = 2500, height = 2150, units = "px", dpi = 400)
+
+
+#calculate for combined tile and heat map
+Oppoaverage_epvNZFT <- Oppoaverage_epvFT %>%
+  mutate(x = ifelse(zone_x == "[0,17]", 8.5,
+                    ifelse(zone_x == "(17,33.2]", 25.1,
+                           ifelse(zone_x == "(33.2,50]", 41.6,
+                                  ifelse(zone_x == "(50,66.4]", 58.2,
+                                         ifelse(zone_x == "(66.4,83]", 74.7,
+                                                ifelse(zone_x == "(83,100]", 91.5, NA))))))) %>%
+  mutate(y = ifelse(zone_y == "[0,21.1]", 10,
+                    ifelse(zone_y == "(21.1,36.8]", 30,
+                           ifelse(zone_y == "(36.8,63.2]", 50,
+                                  ifelse(zone_y == "(63.2,78.9]", 70,
+                                         ifelse(zone_y == "(78.9,100]", 90, NA))))))
+
+Oppoaverage_epvNZFT <- Oppoaverage_epvNZFT %>%
+  group_by(x, y) %>%
+  summarise(avg_epv = sum(avg_epv, na.rm = TRUE)) %>%
+  mutate(PEPV = 100*(round(avg_epv/OppoEPVFT,2)))  
+
+
+OppoEPVHeatMapplotFT <- OppoEPVHeatMapDataFT %>%
+  ggplot(aes(x = x, y = y)) +
+  annotate_pitch(dimensions = pitch_opta, fill = "#E5E5E5", colour = "#454545") +
+  theme_pitch() +
+  geom_tile() +
+  geom_segment(aes(y = 21.1, yend = 21.1, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 36.8, yend = 36.8, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 63.2, yend = 63.2, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 78.9, yend = 78.9, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 17, xend = 17), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 33.2, xend = 33.2), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 50, xend = 50), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 66.4, xend = 66.4), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 83, xend = 83), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  
+  # add zone percentage numbers
+  geom_text(data = Oppoaverage_epvNZFT, aes(x = x, y = y, label = paste(PEPV, "%")), size = 4) +
+  
+  #geometrics
+  stat_density_2d_filled(aes(level = EPV, fill = after_stat(level)), alpha = 0.8, adjust = 0.1, linewidth = 2) +
+  scale_fill_paletteer_d(ColorScale_Away) +
+  
+  #formatting
+  labs(title = paste(Match_Oppo," Open Play EPV Heat Map - Full Game"), 
+       subtitle = paste0(Match_Fixture,"  \nDirection of play Left to Right, Increased Colour = Higher \nEPV, Box figures = % of Total EPV"),
+       caption =  My_caption) +
+  theme(plot.background = element_rect(colour = "snow", fill = "snow"),
+        plot.caption = element_markdown(),
+        panel.background = element_blank(),
+        plot.title = element_text(colour = "black", face = "bold", size = 14),
+        plot.title.position = "plot",
+        plot.subtitle = element_text(colour = "black", size = 12),
+        legend.position = "none", 
+        legend.direction = "horizontal", 
+        legend.background = element_rect(fill = "#E5E5E5"), 
+        legend.key = element_rect(fill = "#E5E5E5"))
+
+OppoEPVHeatMapplotFT
+
+```
+
+
+## Row 2
+
+``` {r} 
+#up to first subs map
+#set time period
+EPVHeatMapData1sub <- EPVHeatMapData %>%
+  filter(minute <= firstSub)
+
+#set EPV total for time period
+HomeEPV1sub <- sum(EPVHeatMapData1sub$EPVvalue)
+
+# Create a new variable to represent the zone for each observation
+EPVHeatMapData1sub$zone_x <- cut(EPVHeatMapData1sub$x, breaks = c(0, 17, 33.2, 50, 66.4, 83, 100), include.lowest = TRUE)
+EPVHeatMapData1sub$zone_y <- cut(EPVHeatMapData1sub$y, breaks = c(0, 21.1, 36.8, 63.2, 78.9, 100), include.lowest = TRUE)
+
+# Calculate average EPV for each zone
+average_epv1sub <- EPVHeatMapData1sub %>%
+  group_by(zone_x, zone_y) %>%
+  summarize(avg_epv = sum(EPVvalue, na.rm = TRUE)) %>%
+  mutate(avg_epv = round(ifelse(avg_epv < 0, abs(avg_epv), avg_epv), 3),
+         PEPV = round(avg_epv/HomeEPV1sub,3)) 
+
+# Plot the tile plot
+EPVMapplot1sub <- ggplot(average_epv1sub, aes(x = zone_x, y = zone_y, fill = avg_epv)) +
+  theme_pitch() +
+  
+  #geometrics
+  geom_tile() +
+  geom_text(aes(label = PEPV, size = 3)) +
+  scale_fill_paletteer_c(ColorScale_HomeC) +
+  
+  #formatting
+  labs(title = "LFC Open Play EPV Heat Map - Up to first subs", 
+       subtitle = paste0(Match_Fixture,"  \nDirection of play Left to Right, Increased Colour = Higher EPV, \nBox figures = % of Total EPV"),
+       caption =  My_caption) +
+  theme(plot.background = element_rect(colour = "snow", fill = "snow"),
+        plot.caption = element_markdown(),
+        panel.background = element_blank(),
+        plot.title = element_text(colour = "black", face = "bold", size = 14),
+        plot.title.position = "plot",
+        plot.subtitle = element_text(colour = "black", size = 12),
+        legend.position = "none", 
+        legend.direction = "horizontal", 
+        legend.background = element_rect(fill = "#E5E5E5"), 
+        legend.key = element_rect(fill = "#E5E5E5"))
+
+#calculate for combined tile and heat map
+average_epvNZ1sub <- average_epv1sub %>%
+  mutate(x = ifelse(zone_x == "[0,17]", 8.5,
+                    ifelse(zone_x == "(17,33.2]", 25.1,
+                           ifelse(zone_x == "(33.2,50]", 41.6,
+                                  ifelse(zone_x == "(50,66.4]", 58.2,
+                                         ifelse(zone_x == "(66.4,83]", 74.7,
+                                                ifelse(zone_x == "(83,100]", 91.5, NA))))))) %>%
+  mutate(y = ifelse(zone_y == "[0,21.1]", 10,
+                    ifelse(zone_y == "(21.1,36.8]", 30,
+                           ifelse(zone_y == "(36.8,63.2]", 50,
+                                  ifelse(zone_y == "(63.2,78.9]", 70,
+                                         ifelse(zone_y == "(78.9,100]", 90, NA))))))
+
+average_epvNZ1sub <- average_epvNZ1sub %>%
+  group_by(x, y) %>%
+  summarise(avg_epv = sum(avg_epv, na.rm = TRUE)) %>%
+  mutate(PEPV = 100*(round(avg_epv/HomeEPV1sub,2)))  
+
+
+EPVHeatMapplot1sub <- EPVHeatMapData1sub %>%
+  ggplot(aes(x = x, y = y)) +
+  annotate_pitch(dimensions = pitch_opta, fill = "#E5E5E5", colour = "#454545") +
+  theme_pitch() +
+  geom_tile() +
+  geom_segment(aes(y = 21.1, yend = 21.1, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 36.8, yend = 36.8, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 63.2, yend = 63.2, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 78.9, yend = 78.9, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 17, xend = 17), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 33.2, xend = 33.2), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 50, xend = 50), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 66.4, xend = 66.4), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 83, xend = 83), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  
+  # add zone percentage numbers
+  geom_text(data = average_epvNZ1sub, aes(x = x, y = y, label = paste(PEPV, "%")), size = 4) +
+  
+  #geometrics
+  stat_density_2d_filled(aes(level = EPV, fill = after_stat(level)), alpha = 0.8, adjust = 0.1, linewidth = 2) +
+  scale_fill_paletteer_d(ColorScale_Home) +
+  
+  #formatting
+  labs(title = "LFC Open Play EPV Heat Map - Up to first subs", 
+       subtitle = paste0(Match_Fixture,"  \nDirection of play Left to Right, Increased Colour = Higher \nEPV, Box figures = % of Total EPV"),
+       caption =  My_caption) +
+  theme(plot.background = element_rect(colour = "snow", fill = "snow"),
+        plot.caption = element_markdown(),
+        panel.background = element_blank(),
+        plot.title = element_text(colour = "black", face = "bold", size = 14),
+        plot.title.position = "plot",
+        plot.subtitle = element_text(colour = "black", size = 12),
+        legend.position = "none", 
+        legend.direction = "horizontal", 
+        legend.background = element_rect(fill = "#E5E5E5"), 
+        legend.key = element_rect(fill = "#E5E5E5"))
+
+EPVHeatMapplot1sub
+
+################################################################
+
+```
+
+``` {r} 
+#Post first subs map
+#set time period
+EPVHeatMapDataP1sub <- EPVHeatMapData %>%
+  filter(minute > firstSub)
+
+#set EPV total for time period
+HomeEPVP1sub <- sum(EPVHeatMapDataP1sub$EPVvalue)
+
+# Create a new variable to represent the zone for each observation
+EPVHeatMapDataP1sub$zone_x <- cut(EPVHeatMapDataP1sub$x, breaks = c(0, 17, 33.2, 50, 66.4, 83, 100), include.lowest = TRUE)
+EPVHeatMapDataP1sub$zone_y <- cut(EPVHeatMapDataP1sub$y, breaks = c(0, 21.1, 36.8, 63.2, 78.9, 100), include.lowest = TRUE)
+
+# Calculate average EPV for each zone
+average_epvP1sub <- EPVHeatMapDataP1sub %>%
+  group_by(zone_x, zone_y) %>%
+  summarize(avg_epv = sum(EPVvalue, na.rm = TRUE)) %>%
+  mutate(avg_epv = round(ifelse(avg_epv < 0, abs(avg_epv), avg_epv), 3),
+         PEPV = round(avg_epv/HomeEPVP1sub,3)) 
+
+# Plot the tile plot
+EPVMapplotP1sub <- ggplot(average_epvP1sub, aes(x = zone_x, y = zone_y, fill = avg_epv)) +
+  theme_pitch() +
+  
+  #geometrics
+  geom_tile() +
+  geom_text(aes(label = PEPV, size = 3)) +
+  scale_fill_paletteer_c(ColorScale_HomeC) +
+  
+  #formatting
+  labs(title = "LFC Open Play EPV Heat Map - Post First subs", 
+       subtitle = paste0(Match_Fixture,"  \nDirection of play Left to Right, Increased Colour = Higher EPV, \nBox figures = % of Total EPV"),
+       caption =  My_caption) +
+  theme(plot.background = element_rect(colour = "snow", fill = "snow"),
+        plot.caption = element_markdown(),
+        panel.background = element_blank(),
+        plot.title = element_text(colour = "black", face = "bold", size = 14),
+        plot.title.position = "plot",
+        plot.subtitle = element_text(colour = "black", size = 12),
+        legend.position = "none", 
+        legend.direction = "horizontal", 
+        legend.background = element_rect(fill = "#E5E5E5"), 
+        legend.key = element_rect(fill = "#E5E5E5"))
+
+
+#calculate for combined tile and heat map
+average_epvNZP1sub <- average_epvP1sub %>%
+  mutate(x = ifelse(zone_x == "[0,17]", 8.5,
+                    ifelse(zone_x == "(17,33.2]", 25.1,
+                           ifelse(zone_x == "(33.2,50]", 41.6,
+                                  ifelse(zone_x == "(50,66.4]", 58.2,
+                                         ifelse(zone_x == "(66.4,83]", 74.7,
+                                                ifelse(zone_x == "(83,100]", 91.5, NA))))))) %>%
+  mutate(y = ifelse(zone_y == "[0,21.1]", 10,
+                    ifelse(zone_y == "(21.1,36.8]", 30,
+                           ifelse(zone_y == "(36.8,63.2]", 50,
+                                  ifelse(zone_y == "(63.2,78.9]", 70,
+                                         ifelse(zone_y == "(78.9,100]", 90, NA))))))
+
+average_epvNZP1sub <- average_epvNZP1sub %>%
+  group_by(x, y) %>%
+  summarise(avg_epv = sum(avg_epv, na.rm = TRUE)) %>%
+  mutate(PEPV = 100*(round(avg_epv/HomeEPVP1sub,2)))  
+
+
+EPVHeatMapplotP1sub <- EPVHeatMapDataP1sub %>%
+  ggplot(aes(x = x, y = y)) +
+  annotate_pitch(dimensions = pitch_opta, fill = "#E5E5E5", colour = "#454545") +
+  theme_pitch() +
+  geom_tile() +
+  geom_segment(aes(y = 21.1, yend = 21.1, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 36.8, yend = 36.8, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 63.2, yend = 63.2, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 78.9, yend = 78.9, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 17, xend = 17), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 33.2, xend = 33.2), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 50, xend = 50), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 66.4, xend = 66.4), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 83, xend = 83), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  
+  # add zone percentage numbers
+  geom_text(data = average_epvNZP1sub, aes(x = x, y = y, label = paste(PEPV, "%")), size = 4) +
+  
+  #geometrics
+  stat_density_2d_filled(aes(level = EPV, fill = after_stat(level)), alpha = 0.8, adjust = 0.1, linewidth = 2) +
+  scale_fill_paletteer_d(ColorScale_Home) +
+  
+  #formatting
+  labs(title = "LFC Open Play EPV Heat Map - Post First Subs", 
+       subtitle = paste0(Match_Fixture,"  \nDirection of play Left to Right, Increased Colour = Higher \nEPV, Box figures = % of Total EPV"),
+       caption =  My_caption) +
+  theme(plot.background = element_rect(colour = "snow", fill = "snow"),
+        plot.caption = element_markdown(),
+        panel.background = element_blank(),
+        plot.title = element_text(colour = "black", face = "bold", size = 14),
+        plot.title.position = "plot",
+        plot.subtitle = element_text(colour = "black", size = 12),
+        legend.position = "none", 
+        legend.direction = "horizontal", 
+        legend.background = element_rect(fill = "#E5E5E5"), 
+        legend.key = element_rect(fill = "#E5E5E5"))
+
+EPVHeatMapplotP1sub
+
+
+########################################################
+```
+
+## Row 3 
+``` {r}
+#first subs
+#set for time period
+OppoEPVHeatMapData1sub <- OppoEPVHeatMapData %>%
+  filter(minute <= firstSubOppo)
+
+#set EPV total for time period
+OppoEPV1sub <- sum(OppoEPVHeatMapData1sub$EPVvalue)
+
+
+# Create a new variable to represent the zone for each observation
+OppoEPVHeatMapData1sub$zone_x <- cut(OppoEPVHeatMapData1sub$x, breaks = c(0, 17, 33.2, 50, 66.4, 83, 100), include.lowest = TRUE)
+OppoEPVHeatMapData1sub$zone_y <- cut(OppoEPVHeatMapData1sub$y, breaks = c(0, 21.1, 36.8, 63.2, 78.9, 100), include.lowest = TRUE)
+
+# Calculate average EPV for each zone
+Oppoaverage_epv1sub <- OppoEPVHeatMapData1sub %>%
+  group_by(zone_x, zone_y) %>%
+  summarize(avg_epv = sum(EPVvalue, na.rm = TRUE)) %>%
+  mutate(avg_epv = round(ifelse(avg_epv < 0, abs(avg_epv), avg_epv), 3),
+         PEPV = round(avg_epv/OppoEPV1sub,3)) 
+
+# Plot the tile plot
+OppoEPVMapplot1sub <- ggplot(Oppoaverage_epv1sub, aes(x = zone_x, y = zone_y, fill = avg_epv)) +
+  theme_pitch() +
+  
+  #geometrics
+  geom_tile() +
+  geom_text(aes(label = PEPV, size = 3)) +
+  scale_fill_paletteer_c(ColorScale_AwayC) +
+  
+  #formatting
+  labs(title = paste(Match_Oppo," Open Play EPV Heat Map - Up to 1st Subs"), 
+       subtitle = paste0(Match_Fixture,"  \nDirection of play Left to Right, Increased Colour = Higher EPV, \nBox figures = % of Total EPV"),
+       caption =  caption) +
+  theme(plot.background = element_rect(colour = "black", fill = "snow"),
+        plot.caption = element_markdown(),
+        panel.background = element_blank(),
+        plot.title = element_text(colour = "black", face = "bold", size = 14),
+        plot.title.position = "plot",
+        plot.subtitle = element_text(colour = "black", size = 12),
+        legend.position = "none", 
+        legend.direction = "horizontal", 
+        legend.background = element_rect(fill = "#E5E5E5"), 
+        legend.key = element_rect(fill = "#E5E5E5"))
+
+#OppoEPVMapplot1sub
+
+#save tile Map plot
+#ggsave("Oppo Open Play EPV Tile Map 1st subs.png", width = 2500, height = 2150, units = "px", dpi = 400)
+
+
+#calculate for combined tile and heat map
+Oppoaverage_epvNZ1sub <- Oppoaverage_epv1sub %>%
+  mutate(x = ifelse(zone_x == "[0,17]", 8.5,
+                    ifelse(zone_x == "(17,33.2]", 25.1,
+                           ifelse(zone_x == "(33.2,50]", 41.6,
+                                  ifelse(zone_x == "(50,66.4]", 58.2,
+                                         ifelse(zone_x == "(66.4,83]", 74.7,
+                                                ifelse(zone_x == "(83,100]", 91.5, NA))))))) %>%
+  mutate(y = ifelse(zone_y == "[0,21.1]", 10,
+                    ifelse(zone_y == "(21.1,36.8]", 30,
+                           ifelse(zone_y == "(36.8,63.2]", 50,
+                                  ifelse(zone_y == "(63.2,78.9]", 70,
+                                         ifelse(zone_y == "(78.9,100]", 90, NA))))))
+
+Oppoaverage_epvNZ1sub <- Oppoaverage_epvNZ1sub %>%
+  group_by(x, y) %>%
+  summarise(avg_epv = sum(avg_epv, na.rm = TRUE)) %>%
+  mutate(PEPV = 100*(round(avg_epv/OppoEPV1sub,2)))  
+
+
+OppoEPVHeatMapplot1sub <- OppoEPVHeatMapData1sub %>%
+  ggplot(aes(x = x, y = y)) +
+  annotate_pitch(dimensions = pitch_opta, fill = "#E5E5E5", colour = "#454545") +
+  theme_pitch() +
+  geom_tile() +
+  geom_segment(aes(y = 21.1, yend = 21.1, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 36.8, yend = 36.8, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 63.2, yend = 63.2, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 78.9, yend = 78.9, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 17, xend = 17), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 33.2, xend = 33.2), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 50, xend = 50), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 66.4, xend = 66.4), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 83, xend = 83), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  
+  # add zone percentage numbers
+  geom_text(data = Oppoaverage_epvNZ1sub, aes(x = x, y = y, label = paste(PEPV, "%")), size = 4) +
+  
+  #geometrics
+  stat_density_2d_filled(aes(level = EPV, fill = after_stat(level)), alpha = 0.8, adjust = 0.1, linewidth = 2) +
+  scale_fill_paletteer_d(ColorScale_Away) +
+  
+  #formatting
+  labs(title = paste(Match_Oppo," Open Play EPV Heat Map - Up to 1st Subs"), 
+       subtitle = paste0(Match_Fixture,"  \nDirection of play Left to Right, Increased Colour = Higher \nEPV, Box figures = % of Total EPV"),
+       caption =  My_caption) +
+  theme(plot.background = element_rect(colour = "snow", fill = "snow"),
+        plot.caption = element_markdown(),
+        panel.background = element_blank(),
+        plot.title = element_text(colour = "black", face = "bold", size = 14),
+        plot.title.position = "plot",
+        plot.subtitle = element_text(colour = "black", size = 12),
+        legend.position = "none", 
+        legend.direction = "horizontal", 
+        legend.background = element_rect(fill = "#E5E5E5"), 
+        legend.key = element_rect(fill = "#E5E5E5"))
+
+OppoEPVHeatMapplot1sub
+```
+
+``` {r}
+###################################################
+#post first subs
+#set for time period
+OppoEPVHeatMapDataP1sub <- OppoEPVHeatMapData %>%
+  filter(minute > firstSubOppo)
+
+#set EPV total for time period
+OppoEPVP1sub <- sum(OppoEPVHeatMapDataP1sub$EPVvalue)
+
+
+# Create a new variable to represent the zone for each observation
+OppoEPVHeatMapDataP1sub$zone_x <- cut(OppoEPVHeatMapDataP1sub$x, breaks = c(0, 17, 33.2, 50, 66.4, 83, 100), include.lowest = TRUE)
+OppoEPVHeatMapDataP1sub$zone_y <- cut(OppoEPVHeatMapDataP1sub$y, breaks = c(0, 21.1, 36.8, 63.2, 78.9, 100), include.lowest = TRUE)
+
+# Calculate average EPV for each zone
+Oppoaverage_epvP1sub <- OppoEPVHeatMapDataP1sub %>%
+  group_by(zone_x, zone_y) %>%
+  summarize(avg_epv = sum(EPVvalue, na.rm = TRUE)) %>%
+  mutate(avg_epv = round(ifelse(avg_epv < 0, abs(avg_epv), avg_epv), 3),
+         PEPV = round(avg_epv/OppoEPVP1sub,3)) 
+
+# Plot the tile plot
+OppoEPVMapplotP1sub <- ggplot(Oppoaverage_epvP1sub, aes(x = zone_x, y = zone_y, fill = avg_epv)) +
+  theme_pitch() +
+  
+  #geometrics
+  geom_tile() +
+  geom_text(aes(label = PEPV, size = 3)) +
+  scale_fill_paletteer_c(ColorScale_AwayC) +
+  
+  #formatting
+  labs(title = paste(Match_Oppo," Open Play EPV Heat Map - Post 1st Subs"), 
+       subtitle = paste0(Match_Fixture,"  \nDirection of play Left to Right, Increased Colour = Higher EPV, \nBox figures = % of Total EPV"),
+       caption =  caption) +
+  theme(plot.background = element_rect(colour = "black", fill = "snow"),
+        plot.caption = element_markdown(),
+        panel.background = element_blank(),
+        plot.title = element_text(colour = "black", face = "bold", size = 14),
+        plot.title.position = "plot",
+        plot.subtitle = element_text(colour = "black", size = 12),
+        legend.position = "none", 
+        legend.direction = "horizontal", 
+        legend.background = element_rect(fill = "#E5E5E5"), 
+        legend.key = element_rect(fill = "#E5E5E5"))
+
+#OppoEPVMapplotP1sub
+
+#save tile Map plot
+#ggsave("Oppo Open Play EPV Tile Map Post 1st Subs.png", width = 2500, height = 2150, units = "px", dpi = 400)
+
+
+#calculate for combined tile and heat map
+Oppoaverage_epvNZP1sub <- Oppoaverage_epvP1sub %>%
+  mutate(x = ifelse(zone_x == "[0,17]", 8.5,
+                    ifelse(zone_x == "(17,33.2]", 25.1,
+                           ifelse(zone_x == "(33.2,50]", 41.6,
+                                  ifelse(zone_x == "(50,66.4]", 58.2,
+                                         ifelse(zone_x == "(66.4,83]", 74.7,
+                                                ifelse(zone_x == "(83,100]", 91.5, NA))))))) %>%
+  mutate(y = ifelse(zone_y == "[0,21.1]", 10,
+                    ifelse(zone_y == "(21.1,36.8]", 30,
+                           ifelse(zone_y == "(36.8,63.2]", 50,
+                                  ifelse(zone_y == "(63.2,78.9]", 70,
+                                         ifelse(zone_y == "(78.9,100]", 90, NA))))))
+
+Oppoaverage_epvNZP1sub <- Oppoaverage_epvNZP1sub %>%
+  group_by(x, y) %>%
+  summarise(avg_epv = sum(avg_epv, na.rm = TRUE)) %>%
+  mutate(PEPV = 100*(round(avg_epv/OppoEPVP1sub,2)))  
+
+
+OppoEPVHeatMapplotP1sub <- OppoEPVHeatMapDataP1sub %>%
+  ggplot(aes(x = x, y = y)) +
+  annotate_pitch(dimensions = pitch_opta, fill = "#E5E5E5", colour = "#454545") +
+  theme_pitch() +
+  geom_tile() +
+  geom_segment(aes(y = 21.1, yend = 21.1, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 36.8, yend = 36.8, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 63.2, yend = 63.2, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 78.9, yend = 78.9, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 17, xend = 17), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 33.2, xend = 33.2), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 50, xend = 50), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 66.4, xend = 66.4), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 83, xend = 83), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  
+  # add zone percentage numbers
+  geom_text(data = Oppoaverage_epvNZP1sub, aes(x = x, y = y, label = paste(PEPV, "%")), size = 4) +
+  
+  #geometrics
+  stat_density_2d_filled(aes(level = EPV, fill = after_stat(level)), alpha = 0.8, adjust = 0.1, linewidth = 2) +
+  scale_fill_paletteer_d(ColorScale_Away) +
+  
+  #formatting
+  labs(title = paste(Match_Oppo," Open Play EPV Heat Map - Post 1st Subs"), 
+       subtitle = paste0(Match_Fixture,"  \nDirection of play Left to Right, Increased Colour = Higher \nEPV, Box figures = % of Total EPV"),
+       caption =  My_caption) +
+  theme(plot.background = element_rect(colour = "snow", fill = "snow"),
+        plot.caption = element_markdown(),
+        panel.background = element_blank(),
+        plot.title = element_text(colour = "black", face = "bold", size = 14),
+        plot.title.position = "plot",
+        plot.subtitle = element_text(colour = "black", size = 12),
+        legend.position = "none", 
+        legend.direction = "horizontal", 
+        legend.background = element_rect(fill = "#E5E5E5"), 
+        legend.key = element_rect(fill = "#E5E5E5"))
+
+OppoEPVHeatMapplotP1sub
+```
+
+## Row 4
+
+``` {r} 
+#first half EPV Mao
+#set time period
+EPVHeatMapData1H <- EPVHeatMapData %>%
+  filter(period == 1)
+
+#set EPV total for time period
+HomeEPV1H <- sum(EPVHeatMapData1H$EPVvalue)
+
+# Create a new variable to represent the zone for each observation
+EPVHeatMapData1H$zone_x <- cut(EPVHeatMapData1H$x, breaks = c(0, 17, 33.2, 50, 66.4, 83, 100), include.lowest = TRUE)
+EPVHeatMapData1H$zone_y <- cut(EPVHeatMapData1H$y, breaks = c(0, 21.1, 36.8, 63.2, 78.9, 100), include.lowest = TRUE)
+
+# Calculate average EPV for each zone
+average_epv1H <- EPVHeatMapData1H %>%
+  group_by(zone_x, zone_y) %>%
+  summarize(avg_epv = sum(EPVvalue, na.rm = TRUE)) %>%
+  mutate(avg_epv = round(ifelse(avg_epv < 0, abs(avg_epv), avg_epv), 3),
+         PEPV = round(avg_epv/HomeEPV1H,3)) 
+
+#calculate for combined tile and heat map
+average_epvNZ1H <- average_epv1H %>%
+  mutate(x = ifelse(zone_x == "[0,17]", 8.5,
+                    ifelse(zone_x == "(17,33.2]", 25.1,
+                           ifelse(zone_x == "(33.2,50]", 41.6,
+                                  ifelse(zone_x == "(50,66.4]", 58.2,
+                                         ifelse(zone_x == "(66.4,83]", 74.7,
+                                                ifelse(zone_x == "(83,100]", 91.5, NA))))))) %>%
+  mutate(y = ifelse(zone_y == "[0,21.1]", 10,
+                    ifelse(zone_y == "(21.1,36.8]", 30,
+                           ifelse(zone_y == "(36.8,63.2]", 50,
+                                  ifelse(zone_y == "(63.2,78.9]", 70,
+                                         ifelse(zone_y == "(78.9,100]", 90, NA))))))
+
+average_epvNZ1H <- average_epvNZ1H %>%
+  group_by(x, y) %>%
+  summarise(avg_epv = sum(avg_epv, na.rm = TRUE)) %>%
+  mutate(PEPV = 100*(round(avg_epv/HomeEPV1H,2)))  
+
+EPVHeatMapplot1H <- EPVHeatMapData1H %>%
+  ggplot(aes(x = x, y = y)) +
+  annotate_pitch(dimensions = pitch_opta, fill = "#E5E5E5", colour = "#454545") +
+  theme_pitch() +
+  geom_tile() +
+  geom_segment(aes(y = 21.1, yend = 21.1, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 36.8, yend = 36.8, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 63.2, yend = 63.2, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 78.9, yend = 78.9, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 17, xend = 17), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 33.2, xend = 33.2), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 50, xend = 50), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 66.4, xend = 66.4), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 83, xend = 83), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  
+  # add zone percentage numbers
+  geom_text(data = average_epvNZ1H, aes(x = x, y = y, label = paste(PEPV, "%")), size = 4) +
+  
+  #geometrics
+  stat_density_2d_filled(aes(level = EPV, fill = after_stat(level)), alpha = 0.8, adjust = 0.1, linewidth = 2) +
+  scale_fill_paletteer_d(ColorScale_Home) +
+  
+  #formatting
+  labs(title = "LFC Open Play EPV Heat Map - First Half", 
+       subtitle = paste0(Match_Fixture,"  \nDirection of play Left to Right, Increased Colour = Higher \nEPV, Box figures = % of Total EPV"),
+       caption =  My_caption) +
+  theme(plot.background = element_rect(colour = "snow", fill = "snow"),
+        plot.caption = element_markdown(),
+        panel.background = element_blank(),
+        plot.title = element_text(colour = "black", face = "bold", size = 14),
+        plot.title.position = "plot",
+        plot.subtitle = element_text(colour = "black", size = 12),
+        legend.position = "none", 
+        legend.direction = "horizontal", 
+        legend.background = element_rect(fill = "#E5E5E5"), 
+        legend.key = element_rect(fill = "#E5E5E5"))
+
+EPVHeatMapplot1H
+
+
+########################################################
+
+
+
+```
+
+``` {r}  
+#Second half EPV Mao
+#set time period
+EPVHeatMapData2H <- EPVHeatMapData %>%
+  filter(period == 2)
+
+#set EPV total for time period
+HomeEPV2H <- sum(EPVHeatMapData2H$EPVvalue)
+
+# Create a new variable to represent the zone for each observation
+EPVHeatMapData2H$zone_x <- cut(EPVHeatMapData2H$x, breaks = c(0, 17, 33.2, 50, 66.4, 83, 100), include.lowest = TRUE)
+EPVHeatMapData2H$zone_y <- cut(EPVHeatMapData2H$y, breaks = c(0, 21.1, 36.8, 63.2, 78.9, 100), include.lowest = TRUE)
+
+# Calculate average EPV for each zone
+average_epv2H <- EPVHeatMapData2H %>%
+  group_by(zone_x, zone_y) %>%
+  summarize(avg_epv = sum(EPVvalue, na.rm = TRUE)) %>%
+  mutate(avg_epv = round(ifelse(avg_epv < 0, abs(avg_epv), avg_epv), 3),
+         PEPV = round(avg_epv/HomeEPV2H,3)) 
+
+#calculate for combined tile and heat map
+average_epvNZ2H <- average_epv2H %>%
+  mutate(x = ifelse(zone_x == "[0,17]", 8.5,
+                    ifelse(zone_x == "(17,33.2]", 25.1,
+                           ifelse(zone_x == "(33.2,50]", 41.6,
+                                  ifelse(zone_x == "(50,66.4]", 58.2,
+                                         ifelse(zone_x == "(66.4,83]", 74.7,
+                                                ifelse(zone_x == "(83,100]", 91.5, NA))))))) %>%
+  mutate(y = ifelse(zone_y == "[0,21.1]", 10,
+                    ifelse(zone_y == "(21.1,36.8]", 30,
+                           ifelse(zone_y == "(36.8,63.2]", 50,
+                                  ifelse(zone_y == "(63.2,78.9]", 70,
+                                         ifelse(zone_y == "(78.9,100]", 90, NA))))))
+
+average_epvNZ2H <- average_epvNZ2H %>%
+  group_by(x, y) %>%
+  summarise(avg_epv = sum(avg_epv, na.rm = TRUE)) %>%
+  mutate(PEPV = 100*(round(avg_epv/HomeEPV2H,2)))  
+
+EPVHeatMapplot2H <- EPVHeatMapData2H %>%
+  ggplot(aes(x = x, y = y)) +
+  annotate_pitch(dimensions = pitch_opta, fill = "#E5E5E5", colour = "#454545") +
+  theme_pitch() +
+  geom_tile() +
+  geom_segment(aes(y = 21.1, yend = 21.1, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 36.8, yend = 36.8, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 63.2, yend = 63.2, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 78.9, yend = 78.9, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 17, xend = 17), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 33.2, xend = 33.2), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 50, xend = 50), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 66.4, xend = 66.4), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 83, xend = 83), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  
+  # add zone percentage numbers
+  geom_text(data = average_epvNZ2H, aes(x = x, y = y, label = paste(PEPV, "%")), size = 4) +
+  
+  #geometrics
+  stat_density_2d_filled(aes(level = EPV, fill = after_stat(level)), alpha = 0.8, adjust = 0.1, linewidth = 2) +
+  scale_fill_paletteer_d(ColorScale_Home) +
+  
+  #formatting
+  labs(title = "LFC Open Play EPV Heat Map - Second Half", 
+       subtitle = paste0(Match_Fixture,"  \nDirection of play Left to Right, Increased Colour = Higher \nEPV, Box figures = % of Total EPV"),
+       caption =  My_caption) +
+  theme(plot.background = element_rect(colour = "snow", fill = "snow"),
+        plot.caption = element_markdown(),
+        panel.background = element_blank(),
+        plot.title = element_text(colour = "black", face = "bold", size = 14),
+        plot.title.position = "plot",
+        plot.subtitle = element_text(colour = "black", size = 12),
+        legend.position = "none", 
+        legend.direction = "horizontal", 
+        legend.background = element_rect(fill = "#E5E5E5"), 
+        legend.key = element_rect(fill = "#E5E5E5"))
+
+EPVHeatMapplot2H
+
+```
+## Row 5
+```{r}
+#| output: false
+#first half
+#set for time period
+OppoEPVHeatMapData1H <- OppoEPVHeatMapData %>%
+  filter(period == 1)
+
+#set EPV total for time period
+OppoEPV1H <- sum(OppoEPVHeatMapData1H$EPVvalue)
+
+
+# Create a new variable to represent the zone for each observation
+OppoEPVHeatMapData1H$zone_x <- cut(OppoEPVHeatMapData1H$x, breaks = c(0, 17, 33.2, 50, 66.4, 83, 100), include.lowest = TRUE)
+OppoEPVHeatMapData1H$zone_y <- cut(OppoEPVHeatMapData1H$y, breaks = c(0, 21.1, 36.8, 63.2, 78.9, 100), include.lowest = TRUE)
+
+# Calculate average EPV for each zone
+Oppoaverage_epv1H <- OppoEPVHeatMapData1H %>%
+  group_by(zone_x, zone_y) %>%
+  summarize(avg_epv = sum(EPVvalue, na.rm = TRUE)) %>%
+  mutate(avg_epv = round(ifelse(avg_epv < 0, abs(avg_epv), avg_epv), 3),
+         PEPV = round(avg_epv/OppoEPV1H,3)) 
+
+# Plot the tile plot
+OppoEPVMapplot1H <- Oppoaverage_epv1H %>%
+  ggplot(aes(x = zone_x, y = zone_y, fill = avg_epv)) +
+  theme_pitch() +
+  
+  #geometrics
+  geom_tile() +
+  geom_text(aes(label = PEPV, size = 3)) +
+  scale_fill_paletteer_c(ColorScale_AwayC) +
+  
+  #formatting
+  labs(title = paste(Match_Oppo," Open Play EPV Heat Map - 1st Half"), 
+       subtitle = paste0(Match_Fixture,"  \nDirection of play Left to Right, Increased Colour = Higher EPV, \nBox figures = % of Total EPV"),
+       caption =  caption) +
+  theme(plot.background = element_rect(colour = "black", fill = "snow"),
+        plot.caption = element_markdown(),
+        panel.background = element_blank(),
+        plot.title = element_text(colour = "black", face = "bold", size = 14),
+        plot.title.position = "plot",
+        plot.subtitle = element_text(colour = "black", size = 12),
+        legend.position = "none", 
+        legend.direction = "horizontal", 
+        legend.background = element_rect(fill = "#E5E5E5"), 
+        legend.key = element_rect(fill = "#E5E5E5"))
+
+#OppoEPVMapplot1H
+
+#save tile Map plot
+#ggsave("Oppo Open Play EPV Tile Map 1st Half.png", width = 2500, height = 2150, units = "px", dpi = 400)
+
+
+#calculate for combined tile and heat map
+Oppoaverage_epvNZ1H <- Oppoaverage_epv1H %>%
+  mutate(x = ifelse(zone_x == "[0,17]", 8.5,
+                    ifelse(zone_x == "(17,33.2]", 25.1,
+                           ifelse(zone_x == "(33.2,50]", 41.6,
+                                  ifelse(zone_x == "(50,66.4]", 58.2,
+                                         ifelse(zone_x == "(66.4,83]", 74.7,
+                                                ifelse(zone_x == "(83,100]", 91.5, NA))))))) %>%
+  mutate(y = ifelse(zone_y == "[0,21.1]", 10,
+                    ifelse(zone_y == "(21.1,36.8]", 30,
+                           ifelse(zone_y == "(36.8,63.2]", 50,
+                                  ifelse(zone_y == "(63.2,78.9]", 70,
+                                         ifelse(zone_y == "(78.9,100]", 90, NA))))))
+
+Oppoaverage_epvNZ1H <- Oppoaverage_epvNZ1H %>%
+  group_by(x, y) %>%
+  summarise(avg_epv = sum(avg_epv, na.rm = TRUE)) %>%
+  mutate(PEPV = 100*(round(avg_epv/OppoEPV1H,2)))  
+
+```
+
+``` {r}
+OppoEPVHeatMapplot1H <- OppoEPVHeatMapData1H %>%
+  ggplot(aes(x = x, y = y)) +
+  annotate_pitch(dimensions = pitch_opta, fill = "#E5E5E5", colour = "#454545") +
+  theme_pitch() +
+  geom_tile() +
+  geom_segment(aes(y = 21.1, yend = 21.1, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 36.8, yend = 36.8, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 63.2, yend = 63.2, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 78.9, yend = 78.9, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 17, xend = 17), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 33.2, xend = 33.2), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 50, xend = 50), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 66.4, xend = 66.4), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 83, xend = 83), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  
+  # add zone percentage numbers
+  geom_text(data = Oppoaverage_epvNZ1H, aes(x = x, y = y, label = paste(PEPV, "%")), size = 4) +
+  
+  #geometrics
+  stat_density_2d_filled(aes(level = EPV, fill = after_stat(level)), alpha = 0.8, adjust = 0.1, linewidth = 2) +
+  scale_fill_paletteer_d(ColorScale_Away) +
+  
+  #formatting
+  labs(title = paste(Match_Oppo," Open Play EPV Heat Map - 1st Half"), 
+       subtitle = paste0(Match_Fixture,"  \nDirection of play Left to Right, Increased Colour = Higher \nEPV, Box figures = % of Total EPV"),
+       caption =  My_caption) +
+  theme(plot.background = element_rect(colour = "snow", fill = "snow"),
+        plot.caption = element_markdown(),
+        panel.background = element_blank(),
+        plot.title = element_text(colour = "black", face = "bold", size = 14),
+        plot.title.position = "plot",
+        plot.subtitle = element_text(colour = "black", size = 12),
+        legend.position = "none", 
+        legend.direction = "horizontal", 
+        legend.background = element_rect(fill = "#E5E5E5"), 
+        legend.key = element_rect(fill = "#E5E5E5"))
+
+OppoEPVHeatMapplot1H
+
+
+#save Heat Map plot
+#ggsave("Oppo Open Play EPV Heat Map 1st Half.png", width = 2500, height = 2150, units = "px", dpi = 400)
+#return to main directory
+```
+
+``` {r}
+######################################################################
+#Second half
+#set for time period
+OppoEPVHeatMapData2H <- OppoEPVHeatMapData %>%
+  filter(period == 2)
+
+#set EPV total for time period
+OppoEPV2H <- sum(OppoEPVHeatMapData2H$EPVvalue)
+
+
+# Create a new variable to represent the zone for each observation
+OppoEPVHeatMapData2H$zone_x <- cut(OppoEPVHeatMapData2H$x, breaks = c(0, 17, 33.2, 50, 66.4, 83, 100), include.lowest = TRUE)
+OppoEPVHeatMapData2H$zone_y <- cut(OppoEPVHeatMapData2H$y, breaks = c(0, 21.1, 36.8, 63.2, 78.9, 100), include.lowest = TRUE)
+
+# Calculate average EPV for each zone
+Oppoaverage_epv2H <- OppoEPVHeatMapData2H %>%
+  group_by(zone_x, zone_y) %>%
+  summarize(avg_epv = sum(EPVvalue, na.rm = TRUE)) %>%
+  mutate(avg_epv = round(ifelse(avg_epv < 0, abs(avg_epv), avg_epv), 3),
+         PEPV = round(avg_epv/OppoEPV2H,3)) 
+
+# Plot the tile plot
+OppoEPVMapplot2H <- Oppoaverage_epv2H %>%
+  ggplot(aes(x = zone_x, y = zone_y, fill = avg_epv)) +
+  theme_pitch() +
+  
+  #geometrics
+  geom_tile() +
+  geom_text(aes(label = PEPV, size = 3)) +
+  scale_fill_paletteer_c(ColorScale_AwayC) +
+  
+  #formatting
+  labs(title = paste(Match_Oppo," Open Play EPV Heat Map - 2nd Half"), 
+       subtitle = paste0(Match_Fixture,"  \nDirection of play Left to Right, Increased Colour = Higher EPV, \nBox figures = % of Total EPV"),
+       caption =  caption) +
+  theme(plot.background = element_rect(colour = "black", fill = "snow"),
+        plot.caption = element_markdown(),
+        panel.background = element_blank(),
+        plot.title = element_text(colour = "black", face = "bold", size = 14),
+        plot.title.position = "plot",
+        plot.subtitle = element_text(colour = "black", size = 12),
+        legend.position = "none", 
+        legend.direction = "horizontal", 
+        legend.background = element_rect(fill = "#E5E5E5"), 
+        legend.key = element_rect(fill = "#E5E5E5"))
+
+#OppoEPVMapplot2H
+
+
+#calculate for combined tile and heat map
+Oppoaverage_epvNZ2H <- Oppoaverage_epv2H %>%
+  mutate(x = ifelse(zone_x == "[0,17]", 8.5,
+                    ifelse(zone_x == "(17,33.2]", 25.1,
+                           ifelse(zone_x == "(33.2,50]", 41.6,
+                                  ifelse(zone_x == "(50,66.4]", 58.2,
+                                         ifelse(zone_x == "(66.4,83]", 74.7,
+                                                ifelse(zone_x == "(83,100]", 91.5, NA))))))) %>%
+  mutate(y = ifelse(zone_y == "[0,21.1]", 10,
+                    ifelse(zone_y == "(21.1,36.8]", 30,
+                           ifelse(zone_y == "(36.8,63.2]", 50,
+                                  ifelse(zone_y == "(63.2,78.9]", 70,
+                                         ifelse(zone_y == "(78.9,100]", 90, NA))))))
+
+Oppoaverage_epvNZ2H <- Oppoaverage_epvNZ2H %>%
+  group_by(x, y) %>%
+  summarise(avg_epv = sum(avg_epv, na.rm = TRUE)) %>%
+  mutate(PEPV = 100*(round(avg_epv/OppoEPV2H,2)))  
+```
+
+```{r}
+
+OppoEPVHeatMapplot2H <- OppoEPVHeatMapData2H %>%
+  ggplot(aes(x = x, y = y)) +
+  annotate_pitch(dimensions = pitch_opta, fill = "#E5E5E5", colour = "#454545") +
+  theme_pitch() +
+  geom_tile() +
+  geom_segment(aes(y = 21.1, yend = 21.1, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 36.8, yend = 36.8, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 63.2, yend = 63.2, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 78.9, yend = 78.9, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 17, xend = 17), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 33.2, xend = 33.2), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 50, xend = 50), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 66.4, xend = 66.4), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 83, xend = 83), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  
+  # add zone percentage numbers
+  geom_text(data = Oppoaverage_epvNZ2H, aes(x = x, y = y, label = paste(PEPV, "%")), size = 4) +
+  
+  #geometrics
+  stat_density_2d_filled(aes(level = EPV, fill = after_stat(level)), alpha = 0.8, adjust = 0.1, linewidth = 2) +
+  scale_fill_paletteer_d(ColorScale_Away) +
+  
+  #formatting
+  labs(title = paste(Match_Oppo," Open Play EPV Heat Map - 2nd Half"), 
+       subtitle = paste0(Match_Fixture,"  \nDirection of play Left to Right, Increased Colour = Higher \nEPV, Box figures = % of Total EPV"),
+       caption =  My_caption) +
+  theme(plot.background = element_rect(colour = "snow", fill = "snow"),
+        plot.caption = element_markdown(),
+        panel.background = element_blank(),
+        plot.title = element_text(colour = "black", face = "bold", size = 14),
+        plot.title.position = "plot",
+        plot.subtitle = element_text(colour = "black", size = 12),
+        legend.position = "none", 
+        legend.direction = "horizontal", 
+        legend.background = element_rect(fill = "#E5E5E5"), 
+        legend.key = element_rect(fill = "#E5E5E5"))
+
+OppoEPVHeatMapplot2H
+
+```
+# xG Analysis
+
+## Row 1 
+
+``` {r}
+
+# Line Plot
+  
+xGLinePlot <- dashboard_data %>%
+  ggplot() +
+  
+  #Geometrics
+  #xg line
+  geom_line(aes(x = expandedMinute, y = TotalxG), linewidth = 2, colour = Color_LFC) +
+  
+  #npXg line
+  geom_line(aes(x = expandedMinute, y = TotalNPxG), linewidth = 1, colour = Color_LFC, linetype = "dashed") +
+  
+  #xGOT line
+  geom_line(aes(x = expandedMinute, y = TotalxGOT), linewidth = 1, colour = "grey4") +
+  
+  #Half time marker
+  geom_segment(aes(y = 0, yend = max(TotalxG), x = 45, xend = 45), linewidth = 0.8, colour = "black", linetype = "longdash") +
+  geom_text(aes(x = 45, y = max(TotalxG), label = "HT"), colour = "black", vjust = -1, size = 4) +
+  
+  #add ball imae for goals
+  geom_image(inherit.aes = FALSE, mapping = aes(x = Goal_point_X, y = Goal_point_Y, image = "~/Dropbox/AI lfc data/Icons/ball2.png"), size = 0.025) +
+  geom_label_repel(aes(x = Goal_point_X, y = Goal_point_Y, label = paste0(type, " Min:", expandedMinute, "\nxG:", xG)), size = 3) +
+
+  #formatting
+  expand_limits(x = 0, y = 0) +
+  scale_x_continuous(breaks = seq(0, 100, 15)) +
+  labs(x = "Match Time (mins)", 
+       y = "xG, NPxG, xGOT",
+       title = paste0(Match_LFC, " ", xGlineTitle_text), 
+       subtitle = paste0(Match_Fixture," ", Data_type))  +
+  theme(plot.background = element_rect(colour = "snow", fill = "snow"),
+        panel.background = element_blank(),
+        plot.title = element_markdown(),
+        plot.title.position = "plot",
+        plot.subtitle = element_text(colour = "black", size = 12),
+        axis.title = element_text(colour = "black", face = "bold", size = 12),
+        axis.text = element_text(colour = "black", size = 8),
+        panel.grid.major = element_line(colour = "#454545", linewidth = 0.4, linetype = "dashed"),
+        panel.grid.minor = element_line(colour = "#454545", linewidth = 0.4, linetype = "dashed"),
+        panel.grid.minor.x = element_blank())
+
+xGLinePlot
+
+#xGLinePlot_I <- ggplotly(xGLinePlot)
+#xGLinePlot_I
+
+```
+
+```{r}
+# Line Plot
+#canvas
+xGLinePlotOppo <- Oppodashboard_data %>%
+  ggplot() +
+  
+  #Geometrics
+  #plot xg line
+  geom_line(aes(x = expandedMinute, y = TotalxG), linewidth = 2, colour = Color_Oppo) +
+  
+  #npXg line
+  geom_line(aes(x = expandedMinute, y = TotalNPxG), linewidth = 1, colour = Color_Oppo, linetype = "dashed") +
+  
+  #xGOT line
+  geom_line(aes(x = expandedMinute, y = TotalxGOT), linewidth = 1, colour = "grey4") +
+  
+  #Half time marker
+  geom_segment(aes(y = 0, yend = max(TotalxG), x = 45, xend = 45), linewidth = 0.8, colour = "black", linetype = "longdash") +
+  geom_text(aes(x = 45, y = max(TotalxG), label = "HT"), colour = "black", vjust = -1, size = 4) +
+  
+  #add ball image for goals
+  geom_image(inherit.aes = FALSE, mapping = aes(x = Goal_point_X, y = Goal_point_Y, image = "~/Dropbox/AI lfc data/Icons/ball2.png"), size = 0.025) +
+  geom_label_repel(aes(x = Goal_point_X, y = Goal_point_Y, label = paste0(type, " Min:", expandedMinute, "\nxG:", xG)), size = 3) +
+  
+
+  #formatting
+  expand_limits(x = 0, y = 0) +
+  scale_x_continuous(breaks = seq(0, 100, 15)) +
+  labs(x = "Match Time (mins)", 
+       y = "xG, NPxG, xGOT",
+       title = paste0(Match_Oppo, " ", OppoxGlineTitle_text), 
+       subtitle = paste0(Match_Fixture," ", Data_type))  +
+  theme(plot.background = element_rect(colour = "snow", fill = "snow"),
+        panel.background = element_blank(),
+        plot.title = element_markdown(),
+        plot.title.position = "plot",
+        plot.subtitle = element_text(colour = "black", size = 12),
+        axis.title = element_text(colour = "black", face = "bold", size = 12),
+        axis.text = element_text(colour = "black", size = 8),
+        panel.grid.major = element_line(colour = "#454545", linewidth = 0.4, linetype = "dashed"),
+        panel.grid.minor = element_line(colour = "#454545", linewidth = 0.4, linetype = "dashed"),
+        panel.grid.minor.x = element_blank())
+
+xGLinePlotOppo
+```
+
+## Row 2
+
+``` {r}
+#Load data (opta Data)
+dashboard_data <- plottingData
+
+#Dashboard data wrangling all data
+dashboard_data <- dashboard_data %>%
+  filter(teamId == Match_LFC) %>%
+  filter(TotalShots == 1) %>%
+  filter(!situation == "NA") %>%
+  mutate(TotalxG = cumsum(xG)) %>%
+  mutate(TotalNPxG = cumsum(NPxG)) %>%
+  mutate(TotalxGOT = cumsum(xGOT)) %>%
+  mutate(Goal_point_X = ifelse(str_detect(Goals, "1"), paste0(expandedMinute), NA)) %>%
+  mutate(Goal_point_Y = ifelse(str_detect(Goals, "1"), paste0(TotalxG), NA)) %>%
+  mutate(Goal_point_X = as.numeric(Goal_point_X)) %>%
+  mutate(Goal_point_Y = as.numeric(Goal_point_Y)) %>%
+  select(x, y, Goal_point_Y, Goal_point_X, TotalxG, TotalNPxG, TotalxGOT, situation, teamId, TotalShots, xG, NPxG, xGOT, expandedMinute, type)
+
+#Dashboard plots
+# Density Shot Map
+
+#canvas
+xGDensityPlot <- dashboard_data %>%
+  ggplot(aes(x = x, y = y)) +
+  annotate_pitch(dimensions = pitch_opta, fill = "#E5E5E5", colour = "#454545") +
+  theme_pitch() +
+  geom_segment(aes(y = 21.1, yend = 21.1, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 36.8, yend = 36.8, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 63.2, yend = 63.2, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 78.9, yend = 78.9, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 17, xend = 17), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 33.2, xend = 33.2), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 50, xend = 50), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 66.4, xend = 66.4), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 83, xend = 83), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  
+  # add zone numbers
+  geom_text(aes(y = 50, x = 74.7, label = "14"), size = 3, color = "grey", show.legend = FALSE) +
+  geom_text(aes(y = 71.05, x = 74.7, label = "LHS"), size = 3, color = "grey", show.legend = FALSE) +
+  geom_text(aes(y = 28.95, x = 74.7, label = "RHS"), size = 3, color = "grey", show.legend = FALSE) +
+  
+  #geometrics
+  stat_density_2d(aes(color = after_stat(level), fill = after_stat(level), text = paste("xG: ", ..level..)), geom = "polygon", alpha = 0.4, linewidth = 1) +
+  #geom_density_2d(aes(color = after_stat(level), fill = after_stat(level), text = paste("xG: ", ..level..)), alpha = 0.7, linewidth = 1.5) +
+  scale_color_paletteer_c(ColorScale_HomeC) +
+  scale_fill_paletteer_c(ColorScale_HomeC) +
+  guides(fill = guide_legend(title = "xG Level")) +
+  guides(color = guide_legend(title = "xG Level")) +
+  scale_size_continuous(range = c(0.5, 7)) +
+  
+  #formatting
+  labs(title = paste0(Match_LFC," xG Density Areas"), 
+       subtitle = paste0(Match_Fixture," ", Data_type),
+       fill = "xG Level",
+       color = "xG Level",
+        caption = "Darker Colour + Tighter Lines = Higher xG") +
+  theme(plot.background = element_rect(colour = "snow", fill = "snow"),
+        panel.background = element_rect(colour = "snow", fill = "snow"),
+        plot.title = element_text(colour = "black", face = "bold", size = 14),
+        plot.title.position = "plot",
+        plot.subtitle = element_text(colour = "black", size = 12),
+        plot.caption =  element_text(colour = "black", size = 8),
+        legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.background = element_rect(fill = "#E5E5E5"), 
+        legend.key = element_rect(fill = "#E5E5E5"))
+
+xGDensityPlot_I <- ggplotly(xGDensityPlot, tooltip = "text")
+xGDensityPlot_I
+
+```
+
+``` {r}
+#Oppo dashboard
+#Load data (Understat Data)
+Oppodashboard_data <- plottingData
+
+Oppodashboard_data <- Oppodashboard_data %>%
+  filter(teamId == Match_Oppo) %>%
+  filter(TotalShots == 1) %>%
+  filter(!situation == "NA") %>%
+  mutate(TotalxG = cumsum(xG)) %>%
+  mutate(TotalNPxG = cumsum(NPxG)) %>%
+  mutate(TotalxGOT = cumsum(xGOT)) %>%
+  mutate(Goal_point_X = ifelse(str_detect(Goals, "1"), paste0(expandedMinute), NA)) %>%
+  mutate(Goal_point_Y = ifelse(str_detect(Goals, "1"), paste0(TotalxG), NA)) %>%
+  mutate(Goal_point_X = as.numeric(Goal_point_X)) %>%
+  mutate(Goal_point_Y = as.numeric(Goal_point_Y)) %>%
+  select(x, y, Goal_point_Y, Goal_point_X, TotalxG, TotalNPxG, TotalxGOT, situation, teamId, TotalShots, xG, NPxG, xGOT, expandedMinute, type)
+
+
+#Dashboard plots
+# Density Shot Map
+
+#canvas
+xGDensityPlotOppo <- Oppodashboard_data %>%
+  ggplot(aes(x = x, y = y)) +
+  annotate_pitch(dimensions = pitch_opta, fill = "#E5E5E5", colour = "#454545") +
+  theme_pitch() +
+  geom_segment(aes(y = 21.1, yend = 21.1, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 36.8, yend = 36.8, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 63.2, yend = 63.2, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 78.9, yend = 78.9, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 17, xend = 17), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 33.2, xend = 33.2), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 50, xend = 50), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 66.4, xend = 66.4), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  geom_segment(aes(y = 0, yend = 100, x = 83, xend = 83), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+  
+  # add zone numbers
+  geom_text(aes(y = 50, x = 74.7, label = "14"), size = 3, color = "grey", show.legend = FALSE) +
+  geom_text(aes(y = 71.05, x = 74.7, label = "LHS"), size = 3, color = "grey", show.legend = FALSE) +
+  geom_text(aes(y = 28.95, x = 74.7, label = "RHS"), size = 3, color = "grey", show.legend = FALSE) +
+   
+  #geometrics
+    stat_density_2d(aes(color = after_stat(level), fill = after_stat(level), text = paste("xG: ", ..level..)), geom = "polygon", alpha = 0.4, linewidth = 1) +
+#  geom_density_2d(aes(color = after_stat(level), fill = after_stat(level), text = paste("xG: ", ..level..)), alpha = 0.75, linewidth = 1.5) +
+  scale_color_paletteer_c(ColorScale_AwayC) +
+  scale_fill_paletteer_c(ColorScale_AwayC) +
+  guides(fill = guide_legend(title = "xG Level")) +
+  guides(color = guide_legend(title = "xG Level")) +
+  scale_size_continuous(range = c(0.5, 7)) +
+  
+  #formatting
+  labs(title = paste0(Match_Oppo," xG Density Areas"), 
+       subtitle = paste0(Match_Fixture," ", Data_type),
+       caption = "Darker Colour + Tighter Lines = Higher xG") +
+  theme(plot.background = element_rect(colour = "snow", fill = "snow"),
+        panel.background = element_rect(colour = "snow", fill = "snow"),
+        plot.title = element_text(colour = "black", face = "bold", size = 14),
+        plot.title.position = "plot",
+        plot.subtitle = element_text(colour = "black", size = 12),
+        plot.caption =  element_text(colour = "black", size = 8),
+        legend.position = "bottom", 
+        legend.direction = "horizontal", 
+        legend.background = element_rect(fill = "#E5E5E5"), 
+        legend.key = element_rect(fill = "#E5E5E5"))
+
+xGDensityPlotOppo_I <- ggplotly(xGDensityPlotOppo, tooltip = "text")
+xGDensityPlotOppo_I
+```
+
+
+
+## Row 3
+
+``` {r}
+ShotBubblexG_data <- plottingData 
+
+ShotBubblexG_data <- ShotBubblexG_data %>%
+  filter(teamId == Match_LFC)
+
+ShotBubblexG_data <- ShotBubblexG_data %>%
+group_by(expandedMinute, Game_Period) %>%
+  summarize(
+    Attempted_Passes = sum(Attempted_Passes),
+    Touches = sum(Touches),
+    OFShots = sum(OFShots),
+    OTShots = sum(OTShots),
+    Goals = sum(Goals),
+    xG = sum(xG),
+    EPV = sum(EPV),
+    TotalShots = sum(TotalShots),) %>%
+  filter(OFShots > 0 | OTShots > 0 | Goals > 0 )
+
+xGBubblePlot_data <- ShotBubblexG_data %>% 
+  select(Game_Period, expandedMinute, Attempted_Passes, Touches, OFShots, OTShots, Goals, xG, EPV)
+
+xGBubblePlot_data <- xGBubblePlot_data %>%
+  group_by(Game_Period) %>%
+  mutate(xG = round(xG,2)) %>%
+  mutate(EPV = round(EPV,2)) %>%
+  summarize(
+    Attempted_Passes = sum(Attempted_Passes),
+    Touches = sum(Touches),
+    OFShots = sum(OFShots),
+    OTShots = sum(OTShots),
+    Goals = sum(Goals),
+    xG = sum(xG),
+    EPV = sum(EPV),
+    TotalShots = sum(OFShots + OTShots + Goals),
+  )  
+
+#set plot size range
+sizeRange <- c(1, 10)
+
+#load final data frame for plot
+xGBubble_Plot <- xGBubblePlot_data %>%
+
+  #Canvas
+  ggplot(aes(x = Attempted_Passes, y = TotalShots)) +
+  
+  #geometrics
+  #xG bubble
+  scale_fill_paletteer_d(ColorScale_Home, 1) +
+  scale_fill_paletteer_c(ColorScale_HomeC, 1) +
+  geom_point(aes(size = xG, fill = xG), shape = 21, colour = "black", stroke = 0.5, alpha = 0.9) +
+  #EPV Bubble
+  new_scale_fill() +
+  scale_fill_paletteer_d(ColorScale_Home, 1) +
+  scale_fill_paletteer_c(ColorScale_HomeC, 1) +
+  geom_point(aes(size = EPV, fill = EPV), shape = 23, colour = "black", stroke = 0.5, alpha = 0.5) +
+  #Labels
+  new_scale_fill() +  
+  scale_fill_paletteer_d(ColorScale_Home, 1) +
+  geom_label_repel(aes(x = Attempted_Passes, y = TotalShots, label = paste0("Time: ", Game_Period,"\nxG: ", xG, " EPV: ", EPV)), fill = "white", size = 2.5) +
+  
+  #Scale and limits
+  scale_size(range = sizeRange) +
+  scale_x_continuous(limits = c(0, max(xGBubblePlot_data$Attempted_Passes))) +
+  scale_y_continuous(limits = c(0, max(xGBubblePlot_data$TotalShots))) +
+  
+
+  #formatting
+  labs(title = paste0(Match_LFC, " xG (Circles) & EPV (Diamonds) Production by Time Period"),
+         subtitle = paste0(Match_Fixture," ", Data_type),
+         caption = My_caption,
+         x = "Passes",
+         y = "Shots") +
+  theme(plot.background = element_rect(colour = "snow", fill = "snow"),
+        plot.caption = element_markdown(),
+        plot.title = element_text(colour = "Black", size = 14, face = "bold"),
+        axis.title = element_text(colour = "Black", face = "bold", size = 12),
+        axis.text = element_text(colour = "Black", size = 12),
+        panel.grid.major = element_line(colour = "#454545", size = 0.4, linetype = "dashed"),
+        panel.grid.minor.x = element_line(colour = "#454545", size = 0.4, linetype = "dashed"),
+        panel.grid.minor.y = element_blank(),
+        panel.background = element_blank(),
+        legend.position = "none", 
+        legend.direction = "vertical",
+        legend.background = element_blank(),
+        legend.key = element_blank())
+
+xGBubble_Plot
+```
+
+``` {r}
+OppoShotBubblexG_data <- plottingData 
+
+OppoShotBubblexG_data <- OppoShotBubblexG_data %>%
+  filter(teamId == Match_Oppo)
+
+OppoShotBubblexG_data <- OppoShotBubblexG_data %>%
+  group_by(expandedMinute, Game_Period) %>%
+  summarize(
+Attempted_Passes = sum(Attempted_Passes),
+Touches = sum(Touches),
+OFShots = sum(OFShots),
+OTShots = sum(OTShots),
+Goals = sum(Goals),
+xG = sum(xG),
+EPV = sum(EPV),
+TotalShots = sum(TotalShots),) %>%
+  filter(OFShots > 0 | OTShots > 0 | Goals > 0 )
+
+xGOppoBubblePlot_data <- OppoShotBubblexG_data %>% 
+  select(Game_Period, expandedMinute, Attempted_Passes, Touches, OFShots, OTShots, Goals, xG, EPV)
+
+xGOppoBubblePlot_data <- xGOppoBubblePlot_data %>%
+  group_by(Game_Period) %>%
+  mutate(xG = round(xG,2)) %>%
+  mutate(EPV = round(EPV,2)) %>%
+  summarize(
+    Attempted_Passes = sum(Attempted_Passes),
+    Touches = sum(Touches),
+    OFShots = sum(OFShots),
+    OTShots = sum(OTShots),
+    Goals = sum(Goals),
+    xG = sum(xG),
+    EPV = sum(EPV),
+    TotalShots = sum(OFShots + OTShots + Goals),) 
+
+
+#set plot size range
+sizeRange <- c(2, 9)
+
+#load final data frame for plot
+OppoxGBubble_Plot <- xGOppoBubblePlot_data %>%
+  
+  #Canvas
+  ggplot(aes(x = Attempted_Passes, y = TotalShots, size = xG, tooltip = paste("xG:", xG, " EPV:", EPV) )) +
+  
+  #geometrics
+  #xG bubble
+  scale_fill_paletteer_d(ColorScale_Away, 1) +
+  scale_fill_paletteer_c(ColorScale_AwayC, 1) +
+  geom_point_interactive(aes(size = xG, fill = xG), shape = 21, colour = "black", stroke = 0.5, alpha = 0.9) +
+  #EPV Bubble
+  new_scale_fill() +
+  scale_fill_paletteer_d(ColorScale_Away, 1) +
+  scale_fill_paletteer_c(ColorScale_AwayC, 1) +
+  geom_point_interactive(aes(size = EPV, fill = EPV), shape = 23, colour = "black", stroke = 0.5, alpha = 0.5) +
+  #Labels
+  new_scale_fill() +  
+  scale_fill_paletteer_d(ColorScale_Away, 1) +
+  geom_label_repel(aes(x = Attempted_Passes, y = TotalShots, label = paste0("Time: ", Game_Period,"\nxG: ", xG, " EPV: ", EPV)), fill = "white", size = 2.5) +
+  
+  #Scale and limits
+  scale_size(range = sizeRange) +
+  scale_x_continuous(limits = c(0, max(xGOppoBubblePlot_data$Attempted_Passes))) +
+  scale_y_continuous(limits = c(0, max(xGOppoBubblePlot_data$TotalShots))) +
+  
+  
+  #formatting
+  labs(title = paste0(Match_Oppo, " xG (Circle) & EPV (Diamond) Production by Time Period"),
+         subtitle = paste0(Match_Fixture," ", Data_type),
+         x = "Passes",
+         y = "Shots",
+         caption = My_caption) +
+  theme(plot.background = element_rect(colour = "snow", fill = "snow"),
+        plot.caption = element_markdown(),
+        panel.background = element_blank(),
+        plot.title = element_text(colour = "Black", size = 14, face = "bold"),
+        axis.title = element_text(colour = "Black", face = "bold", size = 12),
+        axis.text = element_text(colour = "Black", size = 12),
+        panel.grid.major = element_line(colour = "#454545", size = 0.4, linetype = "dashed"),
+        panel.grid.minor.x = element_line(colour = "#454545", size = 0.4, linetype = "dashed"),
+        panel.grid.minor.y = element_blank(),
+        legend.position = "none", 
+        legend.direction = "vertical",
+        legend.background = element_blank(),
+        legend.key = element_blank())
+
+OppoxGBubble_Plot
+
+#OppoxGBubble_Plot_I <- ggplotly(OppoxGBubble_Plot, tooltip = paste("xG:", "xG", " EPV:", "EPV"))
+
+#OppoxGBubble_Plot_I
+
+#girafe(ggobj = OppoxGBubble_Plot)
+```
+
+## Row 4
+
+``` {r}
+# Bar Plot
+
+xGSituationBarData <- dashboard_data %>%
+    group_by(situation) %>%
+  summarize(
+    xG = sum(xG))
+  
+  #canvas
+xGSituationBar <- xGSituationBarData %>%
+  ggplot(aes(x = xG, y = situation)) +
+  
+  #Geometrics
+  geom_bar(stat = "identity", fill = Color_LFC, colour = Color_LFC) +
+  
+  #formatting
+  labs(y = "", 
+       x = "xG",
+       title = paste0(Match_LFC," xG Creation By Situation"), 
+       subtitle = paste0(Match_Fixture," ", Data_type)) +
+  theme(plot.background = element_rect(colour = "snow", fill = "snow"),
+        panel.background = element_rect(colour = "snow", fill = "snow"),
+        axis.title = element_text(colour = "black", face = "bold", size = 12),
+        axis.text = element_text(colour = "black", size = 10),
+        plot.title = element_text(colour = "black", face = "bold", size = 14),
+        plot.title.position = "plot",
+        plot.subtitle = element_text(colour = "black", size = 12),
+        panel.grid.major = element_line(colour = "#454545", linewidth = 0.4, linetype = "dashed"),
+        panel.grid.minor = element_line(colour = "#454545", linewidth = 0.4, linetype = "dashed"))
+
+xGSituationBar_I <- ggplotly(xGSituationBar, tooltip = "xG")
+
+xGSituationBar_I
+
+```
+
+``` {r}
+# Bar Plot
+xGSituationBarOppoData <- Oppodashboard_data %>%
+    group_by(situation) %>%
+  summarize(
+    xG = sum(xG))
+
+#canvas
+xGSituationBarOppo <- xGSituationBarOppoData %>%
+  ggplot(aes(x = xG, y = situation)) +
+  
+  #Geometrics
+  geom_bar(stat = "identity", fill = Color_Oppo, colour = Color_Oppo) +
+  
+  #formatting
+  labs(y = "", 
+       x = "xG",
+       title = paste0(Match_Oppo, " xG Creation By Situation"), 
+       subtitle = paste0(Match_Fixture," ", Data_type)) +
+  theme(plot.background = element_rect(colour = "snow", fill = "snow"),
+        panel.background = element_rect(colour = "snow", fill = "snow"),
+        axis.title = element_text(colour = "black", face = "bold", size = 12),
+        axis.text = element_text(colour = "black", size = 10),
+        plot.title = element_text(colour = "black", face = "bold", size = 14),
+        plot.title.position = "plot",
+        plot.subtitle = element_text(colour = "black", size = 12),
+        panel.grid.major = element_line(colour = "#454545", linewidth = 0.4, linetype = "dashed"),
+        panel.grid.minor = element_line(colour = "#454545", linewidth = 0.4, linetype = "dashed"))
+
+
+
+xGSituationBarOppo_I <- ggplotly(xGSituationBarOppo, tooltip = "xG")
+
+xGSituationBarOppo_I
+```
+
+# Shot Analysis
+
+```{r shot map function}
+#' Function for plotting shots for a team
+
+plot_shot_AI <- function(data, type = "", teamColor = "#B22222",  bins = 30, highlight_goals = "", average_location = "", matchFixture = "", mapName = "", mapType = "", matchDate = "", dataSource = "", logo = "", wrap = "") {
+  
+  # Checking data frame   
+  if ((nrow(data) > 0) &&
+      sum(c("minute", "X", "Y", "xG", "result", "player", "home_team", "away_team") %in% names(data)) == 8) {
+
+    # set plot names
+    if (dataSource == "UnderStat") {
+      
+      if (mapType == "Home") {
+      
+        home_team <- (data$home_team[nrow(data)]) 
+        shot_name <- paste(home_team, "Shot Map")  
+      
+      } else if (mapType == "Away") {
+      
+        away_team <- (data$away_team[nrow(data)]) 
+        shot_name <- paste(away_team, "Shot Map")  
+      
+      } else if (mapType == "Player") {  
+      
+        last <- sub(".* ", "", data$player[nrow(data)])
+        first <- sub(" .*", "", data$player[nrow(data)])
+        player_name <- paste(first, last)
+      
+        shot_name <- paste(player_name, "Shot Map")
+      } else if (mapType == "") {  
+      
+        shot_name <- paste(mapName, "Shot Map")
+      }
+      
+    }else if (dataSource == "FotMob") {
+      if (mapType == "Home") {
+        
+        home_team <- (data$home_team[nrow(data)]) 
+        shot_name <- paste(home_team, "Shot Map")  
+        
+      } else if (mapType == "Away") {
+        
+        away_team <- (data$away_team[nrow(data)]) 
+        shot_name <- paste(away_team, "Shot Map")  
+        
+      } else if (mapType == "Player") {  
+        
+        last <- (data$last_name[nrow(data)])
+        first <- (data$first_name[nrow(data)])
+        player_name <- paste(first, last)
+        
+        shot_name <- paste(player_name, "Shot Map")
+      
+      } else if (mapType == "") {  
+      
+        shot_name <- paste(mapName, "Shot Map")
+      }
+    }
+      
+    fixture_name <- paste(matchFixture, "(",dataSource,")")
+    
+    # set Plot Colours and scale
+    fill_b <- "#E5E5E5"
+    color_b <- "black"
+    colorLine <- "#95A5A6"
+    colorText <- "black"
+    fill_Goal <- c("No Goal" = fill_b, "Goal" = teamColor)
+    
+    # Data Wrangling 
+    if (dataSource == "UnderStat") {
+      data <- data %>%
+        mutate(X = 100 * X) %>%
+        mutate(Y = 100 * Y)
+      
+     } else if (dataSource == "FotMob") {
+        data <- data %>%
+             mutate(X = (X * 0.941050375),
+                    Y = (Y * 1.464079972))
+      }
+    
+    if (nrow(data) >= 1) {
+      data <- data %>%
+        mutate(xG = round(xG,2)) %>%
+        mutate(isGoal = ifelse(result == "Goal", "Goal", "No Goal")) %>%
+        mutate('Game_Period' = ifelse(minute < 16, "0 - 15",
+                                      ifelse(minute < 31 & minute > 15, "16 - 30",
+                                             ifelse(minute < 46 & minute > 30, "31 - 45",
+                                                    ifelse(minute < 61 & minute > 45, "46 - 60",
+                                                           ifelse(minute < 76 & minute > 60, "61 - 75",
+                                                                  ifelse(minute < 91 & minute > 75, "76 - 90",
+                                                                         ifelse(minute > 90, "90 +", NA))))))))
+
+              # set the pitch up
+              plot <- data %>%
+                ggplot() +
+                annotate_pitch(dimensions = pitch_opta, colour = color_b, fill = fill_b) +
+                theme_pitch() +
+                geom_segment(aes(y = 21.1, yend = 21.1, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+                geom_segment(aes(y = 36.8, yend = 36.8, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+                geom_segment(aes(y = 63.2, yend = 63.2, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+                geom_segment(aes(y = 78.9, yend = 78.9, x = 0, xend = 100), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+                geom_segment(aes(y = 0, yend = 100, x = 17, xend = 17), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+                geom_segment(aes(y = 0, yend = 100, x = 33.2, xend = 33.2), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+                geom_segment(aes(y = 0, yend = 100, x = 50, xend = 50), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+                geom_segment(aes(y = 0, yend = 100, x = 66.4, xend = 66.4), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+                geom_segment(aes(y = 0, yend = 100, x = 83, xend = 83), linewidth = 0.5, colour = "#95A5A6", linetype = "longdash") +
+                
+                # add zone numbers
+                geom_text(aes(y = 50, x = 74.7, label = "14"), size = 3, color = "grey", show.legend = FALSE) +
+                geom_text(aes(y = 71.05, x = 74.7, label = "LHS"), size = 3, color = "grey", show.legend = FALSE) +
+                geom_text(aes(y = 28.95, x = 74.7, label = "RHS"), size = 3, color = "grey", show.legend = FALSE)
+              
+              # geometrics 
+              if (average_location == TRUE || average_location == "") {
+                
+                if (type == "point" || type == "") {
+                  
+                  if (highlight_goals == FALSE || highlight_goals == "") { ## Don't highlight goals ----
+                    plot  <- plot +
+                      geom_point(data = data, aes(x = X,  y = Y, size = xG, color = result, text = paste("Player:", player, "\nMin:", minute, "\nxG", xG)), alpha = 0.7, stroke = 0.5) +
+                      scale_size_continuous(range = c(0.5, 6)) +
+                      geom_vline(xintercept = mean(data$X), color = colorLine, linetype = 2, linewidth = 1.5) +
+                      geom_hline(yintercept = mean(data$Y), color = colorLine, linetype = 2, linewidth = 1.5) +
+                      labs(
+                        fill = "Result & xG of Shot",
+                        color = "Result & xG of Shot",
+                        size = "",
+                      )
+                  } else if (highlight_goals == TRUE) { ## Highlight goals ----
+                    
+                    plot <- plot +
+                      geom_point(data = data, aes(x = X,  y = Y, size = xG, fill = isGoal, text = paste("Player:", player, "\nMin:", minute, "\nxG", xG)), color = color_b, shape = 21, alpha = 0.7, stroke = 0.5) +
+                      scale_fill_manual(values = fill_Goal) +
+                      scale_size_continuous(range = c(0.5, 6)) +
+                      geom_vline(xintercept = mean(data$X), color = colorLine, linetype = 2, linewidth = 1.5) +
+                      geom_hline(yintercept = mean(data$Y), color = colorLine, linetype = 2, linewidth = 1.5) +
+                      labs(
+                        fill = "Result & xG of Shot",
+                        color = "Result & xG of Shot",
+                        size = ""
+                      )
+                  } 
+                } else if (type == "density") { ## DENSITY ----
+                  plot <- plot +
+                    stat_density_2d(data = data, aes(x = X, y = Y, fill = ..level..), geom = "polygon", alpha = 0.7) +
+                    scale_fill_gradient(high = teamColor, low = "#01141D") +
+                    scale_size_continuous(range = c(0.5, 6)) +
+                    geom_vline(xintercept = mean(data$X), color = colorLine, linetype = 2, linewidth = 1.5) +
+                    geom_hline(yintercept = mean(data$Y), color = colorLine, linetype = 2, linewidth = 1.5) +
+                    theme(legend.position = "none")
+                  
+                } else if (type == "hexbin") { ## HEXBIN ----
+                  plot <- plot +
+                    geom_hex(data = data, aes(x = X, y = Y, text = paste("Player:", player, "\nMin:", minute, "\nxG", xG)), bins = bins) +
+                    scale_fill_continuous(type = "viridis") +
+                    scale_size_continuous(range = c(0.5, 6)) +
+                    geom_vline(xintercept = mean(data$X), color = colorLine, linetype = 2, linewidth = 1.5) +
+                    geom_hline(yintercept = mean(data$Y), color = colorLine, linetype = 2, linewidth = 1.5) +
+                    labs(
+                      fill = "Count of Shots"
+                    )
+                }
+              } else if (average_location == FALSE) {
+                
+                if (type == "point" || type == "") {
+                  
+                  if (highlight_goals == FALSE || highlight_goals == "") {
+                    plot <- plot +
+                      geom_point(data = data, aes(x = X, y = Y, size = xG, color = result, text = paste("Player:", player, "\nMin:", minute, "\nxG", xG)), alpha = 0.7, stroke = 0.5) +
+                      scale_size_continuous(range = c(0.5, 6)) +
+                      labs(
+                        color = "Result & xG of Shot",
+                        size = ""
+                      )
+                  } else if (highlight_goals == TRUE) {
+                    
+                    plot <- plot +
+                      geom_point(data = data, aes(x = X, y = Y, size = xG, fill = isGoal, text = paste("Player:", player, "\nMin:", minute, "\nxG", xG)), color = color_b, shape = 21, alpha = 0.7, stroke = 0.5) +
+                      scale_fill_manual(values = fill_Goal) +
+                      scale_size_continuous(range = c(0.5, 6)) +
+                      labs(
+                        fill = "Result & xG of Shot",
+                        size = ""
+                      )
+                  } 
+                } else if (type == "density") {
+                  plot <- plot +
+                    stat_density_2d(data = data, aes(x = X, y = Y, fill = ..level..), geom = "polygon", alpha = 0.7) +
+                    scale_fill_gradient(high = teamColor, low = "#01141D") +
+                    scale_size_continuous(range = c(0.5, 6)) +
+                    labs(fill = "xG")
+                  
+                  
+                } else if (type == "hexbin") {
+                  plot <- plot +
+                    geom_hex(data = data, aes(x = X, y = Y, text = paste("Player:", player, "\nMin:", minute, "\nxG", xG)), bins = bins) +
+                    scale_fill_continuous(type = "viridis") +
+                    scale_size_continuous(range = c(0.5, 6)) +
+                    labs(
+                      fill = "Count of Shots"
+                    )
+                } 
+              }
+              # Make Half pitch  
+              plot <- plot +
+                coord_flip(xlim = c(50, 100),
+                           ylim = c(100, 0))
+              # formatting  
+              plot <- plot +
+                labs(title = shot_name, 
+                     subtitle = fixture_name,
+                     caption = My_caption,
+                     #color = colorText,
+                     #size = "xG & Result of Shot"
+                     ) +
+                
+                theme(legend.position = "bottom",
+                      legend.direction = "horizontal",
+                      legend.background = element_rect(fill = "snow"),
+                      legend.title = element_text(colour = colorText, face = "bold"),
+                      legend.text = element_text(colour = colorText, size = 10),
+                      legend.key = element_rect(fill = "snow"),
+                      plot.caption = element_markdown(),
+                      plot.background = element_rect(colour = "snow", fill = "snow"),
+                      panel.background = element_rect(colour = "snow", fill = "snow"),
+                      plot.title = element_text(colour = colorText, hjust = 0, size = 14, face = "bold"),
+                      plot.subtitle = element_text(colour = colorText, hjust = 0, size = 10))
+              
+              # wrap or not
+              if (wrap == "Player") {
+                #divide stats by player
+                player_stats <- data %>%
+                  group_by(player) %>%
+                  summarize(
+                    total_xG = sum(xG),
+                    total_goal = sum(result == "Goal"),
+                    xg_sot = total_xG / n(),
+                    total_shots = n(),
+                    SOT = sum(result == "Goal" | result == "SavedShot")
+                  )
+
+                plot <- plot +
+                  facet_wrap(~player) +
+                  theme(strip.background = element_rect(fill = teamColor, color = "black", linetype = "solid", linewidth = 1),
+                        strip.text = element_text(size = 10, colour = "white"))
+                
+                plot <- plot +
+                  geom_point(x = 54, y = 89.45, size = 5, color = colorText, shape = 21, fill = fill_b, stroke = 0.5) +
+                  geom_text(data = player_stats, aes(x = 54, y = 89.45, label = format(round(total_xG, 2))), color = color_b, size = 2) +
+                  geom_text(x = 62, y = 89.45, label = "xG", color = colorText, size = 2) +
+                  
+                  geom_point(x = 54, y = 71.05, size = 5, color = colorText, shape = 21, fill = fill_b, stroke = 0.5) +
+                  geom_text(data = player_stats, aes(x = 54, y = 71.05, label = format(round(SOT, 2))), color = color_b, size = 2) +
+                  geom_text(x = 62, y = 71.05, label = "SOT", color = colorText, size = 2) +
+                  
+                  geom_point(x = 54, y = 50, size = 5, color = colorText, shape = 21, fill = fill_b, stroke = 0.5) +
+                  geom_text(data = player_stats, aes(x = 54, y = 50, label = format(round(total_shots, 2))), color = color_b, size = 2) +
+                  geom_text(x = 62, y = 50, label = "Shots", color = colorText, size = 2) +
+                  
+                  geom_point(x = 54, y = 28.95, size = 5, color = colorText, shape = 21, fill = fill_b, stroke = 0.5) +
+                  geom_text(data = player_stats, aes(x = 54, y = 28.95, label = format(round(xg_sot, 2))), color = color_b, size = 2) +
+                  geom_text(x = 62, y = 28.95, label = "xG/Shot", color = colorText, size = 2) +
+                  
+                  geom_point(x = 54, y = 10.55, size = 5, color = colorText, shape = 21, fill = fill_b, stroke = 0.5) +
+                  geom_text(data = player_stats, aes(x = 54, y = 10.55, label = format(round(total_goal, 2))), color = color_b, size = 2) +
+                  geom_text(x = 62, y = 10.55, label = "Goals", color = colorText, size = 2)
+                
+                } else if (wrap == "Time") {
+                  
+                  #divide stats by time period
+                  GPeriod_stats <- data %>%
+                    group_by(Game_Period) %>%
+                    summarize(
+                      total_xG = sum(xG),
+                      total_goal = sum(result == "Goal"),
+                      xg_sot = total_xG / n(),
+                      total_shots = n(),
+                      SOT = sum(result == "Goal" | result == "SavedShot")
+                    )
+                  
+                  
+                    plot <- plot +
+                      
+                      facet_wrap(~ Game_Period) +
+                      theme(strip.background = element_rect(fill = teamColor, color = "black", linetype = "solid", linewidth = 1),
+                            strip.text = element_text(size = 10, colour = "white")) 
+                    
+                    plot <- plot +
+                    geom_point(x = 54, y = 89.45, size = 5, color = colorText, shape = 21, fill = fill_b, stroke = 0.5) +
+                      geom_text(data = GPeriod_stats, aes(x = 54, y = 89.45, label = format(round(total_xG, 2))), color = color_b, size = 2) +
+                      geom_text(x = 62, y = 89.45, label = "xG", color = colorText, size = 2) +
+                      
+                      geom_point(x = 54, y = 71.05, size = 5, color = colorText, shape = 21, fill = fill_b, stroke = 0.5) +
+                      geom_text(data = GPeriod_stats, aes(x = 54, y = 71.05, label = format(round(SOT, 2))), color = color_b, size = 2) +
+                      geom_text(x = 62, y = 71.05, label = "SOT", color = colorText, size = 2) +
+                      
+                      geom_point(x = 54, y = 50, size = 5, color = colorText, shape = 21, fill = fill_b, stroke = 0.5) +
+                      geom_text(data = GPeriod_stats, aes(x = 54, y = 50, label = format(round(total_shots, 2))), color = color_b, size = 2) +
+                      geom_text(x = 62, y = 50, label = "Shots", color = colorText, size = 2) +
+                      
+                      geom_point(x = 54, y = 28.95, size = 5, color = colorText, shape = 21, fill = fill_b, stroke = 0.5) +
+                      geom_text(data = GPeriod_stats, aes(x = 54, y = 28.95, label = format(round(xg_sot, 2))), color = color_b, size = 2) +
+                      geom_text(x = 62, y = 28.95, label = "xG/Shot", color = colorText, size = 2) +
+                      
+                      geom_point(x = 54, y = 10.55, size = 5, color = colorText, shape = 21, fill = fill_b, stroke = 0.5) +
+                      geom_text(data = GPeriod_stats, aes(x = 54, y = 10.55, label = format(round(total_goal, 2))), color = color_b, size = 2) +
+                      geom_text(x = 62, y = 10.55, label = "Goals", color = colorText, size = 2)
+                  
+              } else if (wrap == "") {
+                total_xG <- sum(data$xG)
+                total_goal <- sum(data$result == "Goal")
+                xg_sot <- total_xG / nrow(data)
+                total_shots <- nrow(data)
+                SOT <- sum(data$result == "Goal" | data$result == "SavedShot")
+                
+                plot <- plot +
+                  geom_point(x = 54, y = 89.45, size = 12, color = colorText, shape = 21, fill = fill_b, stroke = 0.5) +
+                  geom_text(x = 54, y = 89.45, label = format(round(total_xG, 2)), color = color_b, size = 3) +
+                  geom_text(x = 60, y = 89.45, label = "Total xG", color = colorText, size = 3) +
+                  geom_point(x = 54, y = 71.05, size = 12, color = colorText, shape = 21, fill = fill_b, stroke = 0.5) +
+                  geom_text(x = 54, y = 71.05, label = format(round(SOT, 2)), color = color_b, size = 3) +
+                  geom_text(x = 60, y = 71.05, label = "SOT", color = colorText, size = 3) +
+                  geom_point(x = 54, y = 50, size = 12, color = colorText, shape = 21, fill = fill_b, stroke = 0.5) +
+                  geom_text(x = 54, y = 50, label = format(round(total_shots, 2)), color = color_b, size = 3) +
+                  geom_text(x = 60, y = 50, label = "Total Shots", color = colorText, size = 3) +  
+                  geom_point(x = 54, y = 28.95, size = 12, color = colorText, shape = 21, fill = fill_b, stroke = 0.5) +
+                  geom_text(x = 54, y = 28.95, label = format(round(xg_sot, 2)), color = color_b, size = 3) +
+                  geom_text(x = 60, y = 28.95, label = "xG/Shot", color = colorText, size = 3) +
+                  geom_point(x = 54, y = 10.55, size = 12, color = colorText, shape = 21, fill = fill_b, stroke = 0.5) +
+                  geom_text(x = 54, y = 10.55, label = format(round(total_goal, 2)), color = color_b, size = 3) +
+                  geom_text(x = 60, y = 10.55, label = "Goals", color = colorText, size = 3)
+              
+                Finalplot <- plot
+              }
+              
+              # logo or not
+              if (logo == "Yes") {
+                
+                # annotate plot
+                Finalplot <- ggdraw() +
+                  draw_plot(plot, x = 0, y = 0, width = 1, height = , scale = 1) +
+                  draw_image(logo_AI,  x = 0.42, y = 0.45, scale = 0.07) 
+                
+              } else if (logo == "") {
+                
+                Finalplot <- plot
+              }
+              
+              return(Finalplot)
+              
+             } else 
+               {
+              ## add WARNING that there were no rows in the data frame passed into function??
+              return(plot)
+    }
+    }
+  }
+
+```
+```{r}
+#load data if needed
+fileName <- paste0("~/Dropbox/AI lfc data/Data Sets/Understat/LFC_shots_EPL2324.xlsx")
+
+#load back in if need to check goal times overlap
+LFC_Understat_shots_EPL2324 <- read_xlsx(fileName)
+
+#Shot plot team match
+#shot map LFC data
+LFC_shotsUS <- LFC_Understat_shots_EPL2324 
+
+LFC_shotsUS <- LFC_shotsUS %>%
+  filter(match_id == MatchIdUS & away_team == Match_LFC & home_away == "a")
+
+#shot map OPPO data
+Oppo_shotsUS <- LFC_Understat_shots_EPL2324 
+
+Oppo_shotsUS <- Oppo_shotsUS %>%
+  filter(match_id == MatchIdUS & home_team == Match_Oppo & home_away == "h")
+
+```
+
+## Row 1 {height = "110%"}
+
+```{r}
+#shot map
+LFC_S_plot <- plot_shot_AI(LFC_shotsUS, highlight_goals = TRUE, average_location = FALSE, mapType = LFCHA, mapName = "Liverpool", teamColor = Color_LFC, matchDate = Game_date, matchFixture = Match_Fixture, dataSource = "UnderStat", logo = "", wrap = "")
+
+LFC_S_plot_I <- ggplotly(LFC_S_plot, tooltip = "text")
+LFC_S_plot_I
+
+```
+
+```{r}
+OPPO_S_plot <- plot_shot_AI(Oppo_shotsUS, highlight_goals = TRUE, average_location = FALSE, mapType = OppoHA,  mapName = Match_Oppo, teamColor = Color_Oppo, matchDate = Game_date, matchFixture = Match_Fixture, dataSource = "UnderStat")
+OPPO_S_plot_I <- ggplotly(OPPO_S_plot, tooltip = "text")
+OPPO_S_plot_I
+
+```
+
+## Row 2  {height = "110%"}
+
+```{r}
+#|height: 110%
+LFC_S_plotW <- plot_shot_AI(LFC_shotsUS, highlight_goals = TRUE, average_location = FALSE, mapType = LFCHA, mapName = "Liverpool", teamColor = Color_LFC, matchDate = Game_date, matchFixture = Match_Fixture, dataSource = "UnderStat", logo = "", wrap = "Player")
+LFC_S_plotW_I <- ggplotly(LFC_S_plotW, tooltip = "text")
+LFC_S_plotW_I
+
+
+```
+
+```{r}
+#|height: 110%
+OPPO_S_plotW <- plot_shot_AI(Oppo_shotsUS, highlight_goals = TRUE, average_location = FALSE, mapType = OppoHA,  mapName = Match_Oppo, teamColor = Color_Oppo, matchDate = Game_date, matchFixture = Match_Fixture, dataSource = "UnderStat", wrap = "Player")
+
+OPPO_S_plotW_I <- ggplotly(OPPO_S_plotW, tooltip = "text")
+OPPO_S_plotW_I
+
+
+```
+
+## Row 3 {height = "110%"}
+
+```{r}
+#|height: 110%
+LFC_S_plotWT <- plot_shot_AI(LFC_shotsUS, highlight_goals = TRUE, average_location = FALSE, mapType = LFCHA, mapName = "Liverpool", teamColor = Color_LFC, matchDate = Game_date, matchFixture = Match_Fixture, dataSource = "UnderStat", logo = "", wrap = "Time")
+LFC_S_plotWT_I <- ggplotly(LFC_S_plotWT, tooltip = "text")
+LFC_S_plotWT_I
+
+
+```
+
+```{r}
+#|height: 110%
+OPPO_S_plotWT <- plot_shot_AI(Oppo_shotsUS, highlight_goals = TRUE, average_location = FALSE, mapType = OppoHA,  mapName = Match_Oppo, teamColor = Color_Oppo, matchDate = Game_date, matchFixture = Match_Fixture, dataSource = "UnderStat", wrap = "Time")
+
+OPPO_S_plotWT_I <- ggplotly(OPPO_S_plotWT, tooltip = "text")
+OPPO_S_plotWT_I
+
+
+```

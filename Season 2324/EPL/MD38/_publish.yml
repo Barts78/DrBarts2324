@@ -1,0 +1,4 @@
+- source: Match day 38 Dashboard.qmd
+  quarto-pub:
+    - id: de5180a2-e6ad-4dd6-aba7-be2231e5c004
+      url: 'https://drbarts.quarto.pub/match-day-38'

@@ -1,0 +1,4 @@
+- source: Match day 31 Dashboard.qmd
+  quarto-pub:
+    - id: 49ac665d-1665-490d-8b8d-d7760b930179
+      url: 'https://drbarts.quarto.pub/match-day-31'

@@ -1,0 +1,4 @@
+- source: Match day 27 Dashboard.qmd
+  quarto-pub:
+    - id: cb3e75f0-d1c5-44de-aa10-c59b6803fb39
+      url: 'https://drbarts.quarto.pub/match-day-27'

@@ -1,0 +1,154 @@
+---
+btitle: "Match day 11 Viz Pack 2023/24"
+author: "Dr Phil Barter"
+format: html
+
+
+output:
+  rmarkdown::html_document:
+    theme: flatly
+    toc: yes
+  pdf_document: 
+    toc: yes
+    toc_depth: 2
+    fig_width: 40px
+    fig_height: 30px
+    fig_caption: yes
+
+  html_document:
+    toc: yes
+    toc_depth: '2'
+    embed-resources: true
+    grid:
+      sidebar-width: 300px
+      body-width: 1024px
+      margin-width: 300px
+      gutter-width: 1.5rem
+    fig_width: 160px
+    fig_height: 150px
+    toc_float: true
+    df_print: paged
+font-family: Arial
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r, echo=FALSE}
+files <- list.files(path = "~/Dropbox/AI lfc data/UP Pod Prep 2324/Match day 11/viz pack/",
+                    pattern = "*.png",
+                    full.names = TRUE) ## A cheeky one-liner
+files <- files[order(file.info(files)$mtime, decreasing = FALSE)]
+#knitr::include_graphics(files)
+```
+
+
+
+\newpage
+
+# Match Day 11
+
+## Line up
+
+```{r, echo=FALSE, fig.height=30, fig.width= 40, out.height= 50, out.width= 40}
+lineup <- list.files(path = "~/Dropbox/AI lfc data/UP Pod Prep 2324/Match day 11/viz pack/Line up/",
+                    pattern = "*.png",
+                    full.names = TRUE) ## A cheeky one-liner
+lineup <- lineup[order(file.info(lineup)$ctime, decreasing = FALSE)]
+
+```
+
+```{r, echo=FALSE, results = "asis"}
+for (file in lineup) {
+  cat("", "\n")
+  cat("![](",file,")", "\n")
+  cat("\n")
+  caption <- paste0("**Caption:** ", tools::file_path_sans_ext(basename(file)), "\n")
+  cat(caption)
+  cat("", "\n")
+  cat("\n")
+  cat("\n")
+}
+```
+
+\newpage
+
+## Liverpool
+
+```{r, echo=FALSE, fig.height=30, fig.width= 40,out.height= 215, out.width= 250,}
+LFCfiles <- list.files(path = "~/Dropbox/AI lfc data/UP Pod Prep 2324/Match day 11/viz pack/LFC",
+                    pattern = "*.png",
+                    full.names = TRUE) ## A cheeky one-liner
+LFCfiles <- LFCfiles[order(file.info(LFCfiles)$mtime, decreasing = FALSE)]
+
+#knitr::include_graphics(LFCfiles)
+```
+
+```{r, echo=FALSE, results = "asis"}
+for (file in LFCfiles) {
+  cat("", "\n")
+  cat("![](",file,")", "\n")
+  cat("\n")
+  caption <- paste0("**Caption:** ", tools::file_path_sans_ext(basename(file)), "\n")
+  cat(caption)
+  cat("", "\n")
+  cat("\n")
+  cat("\n")
+}
+```
+
+\newpage
+
+## Opposition
+
+```{r, echo=FALSE}
+Oppofiles <- list.files(path = "~/Dropbox/AI lfc data/UP Pod Prep 2324/Match day 11/viz pack/Oppo/",
+                    pattern = "*.png",
+                    full.names = TRUE) ## A cheeky one-liner
+Oppofiles <- Oppofiles[order(file.info(Oppofiles)$mtime, decreasing = FALSE)]
+
+#knitr::include_graphics(Oppofiles)
+```
+
+```{r, echo=FALSE, results = "asis"}
+for (file in Oppofiles) {
+  cat("", "\n")
+  cat("![](",file,")", "\n")
+  cat("\n")
+  caption <- paste0("**Caption:** ", tools::file_path_sans_ext(basename(file)), "\n")
+  cat(caption)
+  cat("", "\n")
+  cat("\n")
+  cat("\n")
+}
+```
+
+\newpage
+
+## Liverpool Pressing
+
+```{r, echo=FALSE}
+pressfiles <- list.files(path = "~/Dropbox/AI lfc data/UP Pod Prep 2324/Match day 11/viz pack/Pressing/",
+                    pattern = "*.png",
+                    full.names = TRUE) ## A cheeky one-liner
+pressfiles <- pressfiles[order(file.info(pressfiles)$mtime, decreasing = TRUE)]
+
+#knitr::include_graphics(pressfiles)
+```
+
+```{r, echo=FALSE, results = "asis"}
+for (file in pressfiles) {
+  cat("", "\n")
+  cat("![](",file,")", "\n")
+  cat("\n")
+  caption <- paste0("**Caption:** ", tools::file_path_sans_ext(basename(file)), "\n")
+  cat(caption)
+  cat("", "\n")
+  cat("\n")
+  cat("\n")
+}
+```
+
+\newpage

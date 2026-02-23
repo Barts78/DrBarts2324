@@ -1,0 +1,4 @@
+- source: Match day 32 Dashboard.qmd
+  quarto-pub:
+    - id: f6a098ef-7ccf-4d86-80ca-68031d6614f9
+      url: 'https://drbarts.quarto.pub/match-day-32'
