@@ -10,17 +10,21 @@ output:
   pdf_document: 
     toc: yes
     toc_depth: 2
-    fig_width: 15
-    fig_height: 20
+    fig_width: 40px
+    fig_height: 30px
     fig_caption: yes
-  prettydoc::html_pretty:
-    theme: leonids
-    highlight: github
-    toc: yes
-    toc_depth: '2'
+
   html_document:
     toc: yes
     toc_depth: '2'
+    embed-resources: true
+    grid:
+      sidebar-width: 300px
+      body-width: 1024px
+      margin-width: 300px
+      gutter-width: 1.5rem
+    fig_width: 160px
+    fig_height: 150px
     toc_float: true
     df_print: paged
 font-family: Arial
